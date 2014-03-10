@@ -123,16 +123,4 @@ private:
 extern thread_local fiber_impl_t* FIBER_IMPL;
 extern thread_local scheduler_impl_t* SCHEDULER_IMPL;
 
-class closure_t {
-	virtual run() = 0;
-};
-
-class executor_t {
-	virtual run(closure_t* closure) = 0;
-};
-
-class event_loop_t : public executor_t {
-	virtual wait_io(int fd, int events, closure_t closure);
-};
-
 } // namespace raptor
