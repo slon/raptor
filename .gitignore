@@ -2,3 +2,4 @@
 *.a
 *.o
 .sconsign.dblite
+test/run_ut

@@ -13,7 +13,7 @@ using namespace testing;
 TEST(scheduler_impl_t, creates) {
 	scheduler_impl_t scheduler;
 
-	scheduler.run_once();
+	scheduler.run(EVRUN_NOWAIT);
 }
 
 TEST(DISABLED_scheduler_impl_t, cancel) {
@@ -38,8 +38,8 @@ TEST(scheduler_impl_t, run_simple_fiber) {
 		runned = true;
 	});
 
-	scheduler.wakeup(&fiber);
-	scheduler.run_once();
+	scheduler.activate(&fiber);
+	scheduler.run(EVRUN_NOWAIT);
 
 	ASSERT_TRUE(runned);
 	ASSERT_EQ(fiber_impl_t::TERMINATED, fiber.state());
@@ -53,17 +53,17 @@ TEST(scheduler_impl_t, wait_io) {
 	scheduler_impl_t scheduler;
 
 	fiber_impl_t fiber([fd] () {
-		SCHEDULER_IMPL->wait_io(fd[0], EV_READ);
+		SCHEDULER_IMPL->wait_io(fd[0], EV_READ, nullptr);
 	});
 
-	scheduler.wakeup(&fiber);
-	scheduler.run_once();
+	scheduler.activate(&fiber);
+	scheduler.run(EVRUN_NOWAIT);
 
-	ASSERT_EQ(fiber_impl_t::WAITING, fiber.state());
+	ASSERT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
 
 	ASSERT_TRUE(1 == write(fd[1], "0", 1));
 
-	scheduler.run_once();
+	scheduler.run(EVRUN_NOWAIT);
 
 	ASSERT_EQ(fiber_impl_t::TERMINATED, fiber.state());
 }
