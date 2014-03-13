@@ -83,16 +83,24 @@ static void activate_cb(struct ev_loop* loop, ev_async*, int) {
 	scheduler->run_activated();
 }
 
+static void cancel_cb(struct ev_loop* loop, ev_async*, int) {
+	ev_break(loop, EVBREAK_ONE);
+}
+
 scheduler_impl_t::scheduler_impl_t() {
 	ev_loop_ = ev_loop_new(0);
 	ev_set_userdata(ev_loop_, this);
 
 	ev_async_init(&activate_, activate_cb);
 	ev_async_start(ev_loop_, &activate_);
+
+	ev_async_init(&cancel_, cancel_cb);
+	ev_async_start(ev_loop_, &cancel_);
 }
 
 scheduler_impl_t::~scheduler_impl_t() {
 	ev_async_stop(ev_loop_, &activate_);
+	ev_async_stop(ev_loop_, &cancel_);
 	ev_loop_destroy(ev_loop_);
 }
 
@@ -116,7 +124,7 @@ void scheduler_impl_t::run(int flags) {
 }
 
 void scheduler_impl_t::cancel() {
-	throw std::runtime_error("not implemented");
+	ev_async_send(ev_loop_, &cancel_);	
 }
 
 static void switch_to_cb(struct ev_loop* loop, ev_watcher* io, int) {
@@ -144,8 +152,10 @@ void scheduler_impl_t::wait_io(int fd, int events, duration_t* timeout) {
 double duration_to_ev_time(duration_t t) { return 0.0; }
 
 void scheduler_impl_t::activate(fiber_impl_t* fiber) {
-	std::lock_guard<std::mutex> mutex(activated_mutex_);
+	std::unique_lock<std::mutex> guard(activated_mutex_);
 	activated_fibers_.push_back(fiber);
+	guard.unlock();
+
 	ev_async_send(ev_loop_, &activate_);
 }
 

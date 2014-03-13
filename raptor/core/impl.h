@@ -89,6 +89,8 @@ private:
 	std::vector<fiber_impl_t*> activated_fibers_;
 	ev_async activate_;
 
+	ev_async cancel_;
+
 	friend class fiber_impl_t;
 };
 

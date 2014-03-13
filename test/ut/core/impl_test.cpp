@@ -16,7 +16,7 @@ TEST(scheduler_impl_t, creates) {
 	scheduler.run(EVRUN_NOWAIT);
 }
 
-TEST(DISABLED_scheduler_impl_t, cancel) {
+TEST(scheduler_impl_t, cancel) {
 	scheduler_impl_t scheduler;
 
 	std::thread t([&scheduler] () mutable {
