@@ -31,26 +31,22 @@ public:
 	};
 
 	// [context:fiber]
+	// switch to ev loop context, invoke deferred callbacks
 	void yield(deferred_t* deferred = nullptr);
-	void check_state();
 	void jump_to(scheduler_impl_t* scheduler);
 
-	// [context:ev]
+	// switch to fiber context
 	void switch_to();
 
-	// [context:any] [thread:any]
 	void wakeup();
-	void wakeup_with_cancel();
-	void wakeup_with_timeout();
+
 	run_state_t state();
 
 private:
 	spinlock_t lock_;
-
-	// protected by lock
+ 	// protected by lock
 	run_state_t run_state_;
-	bool timedout_;
-	bool cancaled_;
+	bool woken_up_;
 
 	scheduler_impl_t* scheduler_;
 
@@ -68,28 +64,31 @@ public:
 	scheduler_impl_t();
 	~scheduler_impl_t();
 
+	// [context:ev] [thread:ev]
 	void run(int flags = 0);
 	void run_activated();
-	void cancel();
 
 	// [context:any] [thread:any]
 	void activate(fiber_impl_t* fiber);
+	void break_loop();
 
 	// [context:fiber] [thread:ev]
-	void wait_io(int fd, int events, duration_t* timeout);
-	void wait_timeout(duration_t* timeout);
+	enum wait_result_t {
+		READY, TIMEDOUT, CANCELED
+	};
+
+	wait_result_t wait_io(int fd, int events, duration_t* timeout);
+	wait_result_t wait_timeout(duration_t* timeout);
 
 private:
 	struct ev_loop* ev_loop_;
 	internal::context_t ev_context_;
 
-	std::vector<fiber_impl_t*> owned_fibers_;
-
 	std::mutex activated_mutex_;
 	std::vector<fiber_impl_t*> activated_fibers_;
 	ev_async activate_;
 
-	ev_async cancel_;
+	ev_async break_loop_;
 
 	friend class fiber_impl_t;
 };

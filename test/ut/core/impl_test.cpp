@@ -16,16 +16,16 @@ TEST(scheduler_impl_t, creates) {
 	scheduler.run(EVRUN_NOWAIT);
 }
 
-TEST(scheduler_impl_t, cancel) {
+TEST(scheduler_impl_t, break_loop) {
 	scheduler_impl_t scheduler;
 
 	std::thread t([&scheduler] () mutable {
 		scheduler.run();
 	});
 
-	sleep(1);
+	usleep(10000);
 
-	scheduler.cancel();
+	scheduler.break_loop();
 
 	t.join();
 }
@@ -52,20 +52,73 @@ TEST(scheduler_impl_t, wait_io) {
 
 	scheduler_impl_t scheduler;
 
-	fiber_impl_t fiber([fd] () {
-		SCHEDULER_IMPL->wait_io(fd[0], EV_READ, nullptr);
+	int wait_res = -1;
+	fiber_impl_t fiber([fd, &wait_res] () {
+		wait_res = SCHEDULER_IMPL->wait_io(fd[0], EV_READ, nullptr);
 	});
 
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
 
-	ASSERT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
+	EXPECT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
 
 	ASSERT_TRUE(1 == write(fd[1], "0", 1));
 
 	scheduler.run(EVRUN_NOWAIT);
 
-	ASSERT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_EQ(scheduler_impl_t::READY, wait_res);
+
+	close(fd[0]); close(fd[1]);
+}
+
+TEST(scheduler_impl_t, wait_io_timeout) {
+	int fd[2];
+	ASSERT_EQ(0, pipe2(fd, O_NONBLOCK));
+
+	scheduler_impl_t scheduler;
+
+	int wait_res = -1;
+	duration_t duration = std::chrono::milliseconds(10);
+	fiber_impl_t fiber([fd, &wait_res, &duration] () {
+		wait_res = SCHEDULER_IMPL->wait_io(fd[0], EV_READ, &duration);
+	});
+
+	scheduler.activate(&fiber);
+	scheduler.run(EVRUN_NOWAIT);
+
+	EXPECT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
+
+	scheduler.run(EVRUN_ONCE);
+	scheduler.run(EVRUN_ONCE);
+
+	EXPECT_EQ(scheduler_impl_t::TIMEDOUT, wait_res);
+	EXPECT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_GE(duration_t(0.0), duration);
+
+	close(fd[0]); close(fd[1]);
+}
+
+TEST(scheduler_impl_t, wait_timeout) {
+	scheduler_impl_t scheduler;
+
+	int wait_res = -1;
+	duration_t duration = std::chrono::milliseconds(10);
+	fiber_impl_t fiber([&wait_res, &duration] () {
+		wait_res = SCHEDULER_IMPL->wait_timeout(&duration);
+	});
+
+	scheduler.activate(&fiber);
+	scheduler.run(EVRUN_NOWAIT);
+
+	EXPECT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
+
+	scheduler.run(EVRUN_ONCE);
+	scheduler.run(EVRUN_ONCE);
+
+	EXPECT_EQ(scheduler_impl_t::READY, wait_res);
+	EXPECT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_GE(duration_t(0.0), duration);
 }
 
 struct running_scheduler_impl_t : public Test {
@@ -74,7 +127,7 @@ struct running_scheduler_impl_t : public Test {
 	}
 
 	virtual void TearDown() {
-		scheduler.cancel();
+		scheduler.break_loop();
 		t.join();
 	}
 

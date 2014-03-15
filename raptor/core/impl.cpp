@@ -1,17 +1,23 @@
 #include <raptor/core/impl.h>
 
-namespace raptor {
+#include <cassert>
 
+namespace raptor {
 
 void fiber_impl_t::run_fiber(void* arg) {
 	fiber_impl_t* fiber = (fiber_impl_t*)arg;
 	fiber->task_();
+
+	std::unique_lock<spinlock_t> guard(fiber->lock_);
 	fiber->run_state_ = TERMINATED;
+	guard.unlock();
+
 	fiber->yield(nullptr);
 }
 
 fiber_impl_t::fiber_impl_t(closure_t task, size_t stack_size) :
 		run_state_(SUSPENDED),
+		woken_up_(false),
 		scheduler_(nullptr),
 		task_(task),
 		deferred_(nullptr),
@@ -25,14 +31,13 @@ void fiber_impl_t::yield(deferred_t* deferred) {
 }
 
 struct deferred_send_t : public deferred_t {
-	deferred_send_t(scheduler_impl_t* scheduler, fiber_impl_t* fiber)
-		: scheduler(scheduler), fiber(fiber) {}
+	deferred_send_t(fiber_impl_t* fiber)
+		: fiber(fiber) {}
 
-	scheduler_impl_t* scheduler;
 	fiber_impl_t* fiber;
 
 	virtual void after_yield() {
-		scheduler->activate(fiber);
+		fiber->wakeup();
 	}
 };
 
@@ -41,14 +46,13 @@ fiber_impl_t::run_state_t fiber_impl_t::state() {
 }
 
 void fiber_impl_t::jump_to(scheduler_impl_t* scheduler) {
-	deferred_send_t deferred_send{scheduler, this};
+	deferred_send_t deferred_send(this);
 
+	std::lock_guard<spinlock_t> guard(lock_);
 	scheduler_ = scheduler;
 
 	yield(&deferred_send);
 }
-
-void fiber_impl_t::check_state() {}
 
 void fiber_impl_t::switch_to() {
 	if(deferred_) {
@@ -66,15 +70,16 @@ void fiber_impl_t::switch_to() {
 	}
 }
 
-void fiber_impl_t::wakeup_with_cancel() {
-	wakeup();
-}
-
-void fiber_impl_t::wakeup_with_timeout() {
-	wakeup();
-}
-
 void fiber_impl_t::wakeup() {
+	std::unique_lock<spinlock_t> guard(lock_);
+	assert(run_state_ != TERMINATED);
+	if(!woken_up_) {
+		woken_up_ = true;
+	} else {
+		return;
+	}
+	guard.unlock();
+
 	scheduler_->activate(this);
 }
 
@@ -83,7 +88,7 @@ static void activate_cb(struct ev_loop* loop, ev_async*, int) {
 	scheduler->run_activated();
 }
 
-static void cancel_cb(struct ev_loop* loop, ev_async*, int) {
+static void break_loop_cb(struct ev_loop* loop, ev_async*, int) {
 	ev_break(loop, EVBREAK_ONE);
 }
 
@@ -94,13 +99,13 @@ scheduler_impl_t::scheduler_impl_t() {
 	ev_async_init(&activate_, activate_cb);
 	ev_async_start(ev_loop_, &activate_);
 
-	ev_async_init(&cancel_, cancel_cb);
-	ev_async_start(ev_loop_, &cancel_);
+	ev_async_init(&break_loop_, break_loop_cb);
+	ev_async_start(ev_loop_, &break_loop_);
 }
 
 scheduler_impl_t::~scheduler_impl_t() {
 	ev_async_stop(ev_loop_, &activate_);
-	ev_async_stop(ev_loop_, &cancel_);
+	ev_async_stop(ev_loop_, &break_loop_);
 	ev_loop_destroy(ev_loop_);
 }
 
@@ -123,33 +128,57 @@ void scheduler_impl_t::run(int flags) {
 	SCHEDULER_IMPL = nullptr;
 }
 
-void scheduler_impl_t::cancel() {
-	ev_async_send(ev_loop_, &cancel_);	
+void scheduler_impl_t::break_loop() {
+	ev_async_send(ev_loop_, &break_loop_);	
 }
 
-static void switch_to_cb(struct ev_loop* loop, ev_watcher* io, int) {
-	fiber_impl_t* fiber = (fiber_impl_t*)io->data;
-	fiber->switch_to();
+struct watcher_data_t {
+	watcher_data_t(fiber_impl_t* fiber) : fiber(fiber), events(0) {}
+
+	fiber_impl_t* fiber;
+	int events;
+};
+
+static void switch_to_cb(struct ev_loop* loop, ev_watcher* io, int events) {
+	watcher_data_t* data = (watcher_data_t*)io->data;
+	data->events = events;
+	data->fiber->switch_to();
 }
 
-void scheduler_impl_t::wait_io(int fd, int events, duration_t* timeout) {
+scheduler_impl_t::wait_result_t scheduler_impl_t::wait_io(int fd, int events, duration_t* timeout) {
 	ev_io io_ready;
+	ev_timer timer_timeout;
 
-	FIBER_IMPL->check_state();
+	watcher_data_t watcher_data(FIBER_IMPL);
 
 	ev_init((ev_watcher*)&io_ready, switch_to_cb);
 	ev_io_set(&io_ready, fd, events);
+	io_ready.data = &watcher_data;
 	ev_io_start(ev_loop_, &io_ready);
-	io_ready.data = FIBER_IMPL;
 
+	if(timeout) {
+		ev_init((ev_watcher*)&timer_timeout, switch_to_cb);
+		ev_timer_set(&timer_timeout, timeout->count(), 0.0);
+		timer_timeout.data = &watcher_data;
+		ev_timer_start(ev_loop_, &timer_timeout);
+	}
+
+	ev_tstamp start_wait = ev_now(ev_loop_);
 	FIBER_IMPL->yield();
+	if(timeout)
+		*timeout -= duration_t(ev_now(ev_loop_) - start_wait);
 
 	ev_io_stop(ev_loop_, &io_ready);
+	if(timeout) {
+		ev_timer_stop(ev_loop_, &timer_timeout);
+	}
 
-	FIBER_IMPL->check_state();
+	if(watcher_data.events & EV_TIMER) {
+		return TIMEDOUT;
+	} else {
+		return READY;
+	}
 }
-
-double duration_to_ev_time(duration_t t) { return 0.0; }
 
 void scheduler_impl_t::activate(fiber_impl_t* fiber) {
 	std::unique_lock<std::mutex> guard(activated_mutex_);
@@ -159,21 +188,25 @@ void scheduler_impl_t::activate(fiber_impl_t* fiber) {
 	ev_async_send(ev_loop_, &activate_);
 }
 
-void scheduler_impl_t::wait_timeout(duration_t* timeout) {
+scheduler_impl_t::wait_result_t scheduler_impl_t::wait_timeout(duration_t* timeout) {
+	assert(timeout);
+
 	ev_timer timer_ready;
 
-	FIBER_IMPL->check_state();
+	watcher_data_t watcher_data(FIBER_IMPL);
 
 	ev_init((ev_watcher*)&timer_ready, switch_to_cb);
-	ev_timer_set(&timer_ready, duration_to_ev_time(*timeout), 0.0);
+	ev_timer_set(&timer_ready, timeout->count(), 0.0);
 	ev_timer_start(ev_loop_, &timer_ready);
-	timer_ready.data = FIBER_IMPL;
+	timer_ready.data = &watcher_data;
 
+	ev_tstamp start_wait = ev_now(ev_loop_);
 	FIBER_IMPL->yield();
+	*timeout -= duration_t(ev_now(ev_loop_) - start_wait);
 
 	ev_timer_stop(ev_loop_, &timer_ready);
 
-	FIBER_IMPL->check_state();
+	return READY;
 }
 
 thread_local fiber_impl_t* FIBER_IMPL = nullptr;
