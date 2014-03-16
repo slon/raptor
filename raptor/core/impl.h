@@ -73,7 +73,7 @@ public:
 
 	wait_result_t wait_io(int fd, int events, duration_t* timeout);
 	wait_result_t wait_timeout(duration_t* timeout);
-	wait_result_t wait_monitor(monitor_t* monitor, duration_t* timeout);
+	wait_result_t wait_queue(spinlock_t* queue_lock, duration_t* timeout);
 
 	void switch_to();
 

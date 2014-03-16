@@ -2,8 +2,6 @@
 
 #include <cassert>
 
-#include <raptor/core/monitor.h>
-
 namespace raptor {
 
 void fiber_impl_t::run_fiber(void* arg) {
@@ -180,25 +178,25 @@ scheduler_impl_t::wait_result_t scheduler_impl_t::wait_timeout(duration_t* timeo
 	return READY;
 }
 
-struct deferred_monitor_lock_t : public deferred_t {
-	deferred_monitor_lock_t(monitor_t* monitor) : monitor(monitor) {}
+struct deferred_unlock_t : public deferred_t {
+	deferred_unlock_t(spinlock_t* lock) : lock(lock) {}
 
-	monitor_t* monitor;
+	spinlock_t* lock;
 
 	void after_yield() {
-		monitor->unlock();
+		lock->unlock();
 	}
 
 	void before_switch_to() {
-		monitor->lock();
+		lock->lock();
 	}
 };
 
-scheduler_impl_t::wait_result_t scheduler_impl_t::wait_monitor(monitor_t* monitor, duration_t* timeout) {
+scheduler_impl_t::wait_result_t scheduler_impl_t::wait_queue(spinlock_t* queue_lock, duration_t* timeout) {
 	ev_timer timer_timeout;
 
 	watcher_data_t watcher_data(FIBER_IMPL);
-	deferred_monitor_lock_t deferred(monitor);
+	deferred_unlock_t deferred(queue_lock);
 
 	ev_tstamp start_wait;
 	if(timeout) {
@@ -218,7 +216,7 @@ scheduler_impl_t::wait_result_t scheduler_impl_t::wait_monitor(monitor_t* monito
 		ev_timer_stop(ev_loop_, &timer_timeout);
 	}
 
-	if(timeout && watcher_data.events & EV_TIMER) {
+	if(timeout && (watcher_data.events & EV_TIMER)) {
 		return TIMEDOUT;
 	} else {
 		return READY;

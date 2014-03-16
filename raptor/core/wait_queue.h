@@ -9,23 +9,22 @@ namespace bi = boost::intrusive;
 
 namespace raptor {
 
-struct monitor_waiter_t : public bi::list_base_hook<> {
+struct queue_waiter_t : public bi::list_base_hook<> {
 	virtual void wakeup();
 };
 
-class monitor_t {
+class wait_queue_t {
 public:
-	void lock() { lock_.lock(); }
-	void unlock() { lock_.unlock(); }
+	wait_queue_t(spinlock_t* lock) : lock_(lock) {}
 
 	bool wait(duration_t* timeout);
 	void notify_one();
 	void notify_all();
 
 private:
-	spinlock_t lock_;
+	spinlock_t* lock_;
 
-	bi::list<monitor_waiter_t> waiters_;
+	bi::list<queue_waiter_t> waiters_;
 };
 
 } // namespace raptor
