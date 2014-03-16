@@ -145,7 +145,6 @@ scheduler_impl_t::wait_result_t scheduler_impl_t::wait_io(int fd, int events, du
 void scheduler_impl_t::activate(fiber_impl_t* fiber) {
  	std::unique_lock<std::mutex> guard(activated_mutex_);
 	if(fiber->is_linked()) return;
-
 	activated_fibers_.push_back(*fiber);
 	guard.unlock();
 

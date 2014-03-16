@@ -1,23 +1,32 @@
 #include <raptor/core/monitor.h>
 
+#include <condition_variable>
+
 #include <raptor/core/impl.h>
 
 namespace raptor {
 
+void monitor_waiter_t::wakeup() {}
+
 struct fiber_monitor_waiter_t : public monitor_waiter_t {
 	fiber_monitor_waiter_t(fiber_impl_t* fiber, scheduler_impl_t* scheduler)
-		: fiber(fiber), scheduler(scheduler), activated(false) {}
+		: fiber(fiber), scheduler(scheduler) {}
 
 	fiber_impl_t* fiber;
 	scheduler_impl_t* scheduler;
-	bool activated;
 
 	virtual void wakeup() {
-		if(!activated) {
-			activated = true;
-			scheduler->activate(fiber);
-		}
+		scheduler->activate(fiber);
 	}
+};
+
+struct native_monitor_waiter_t : public monitor_waiter_t {
+	std::mutex lock;
+	std::condition_variable ready;
+
+	void wait(duration_t* timeout) {}
+
+	virtual void wakeup() {}
 };
 
 bool monitor_t::wait(duration_t* timeout) {
@@ -31,6 +40,18 @@ bool monitor_t::wait(duration_t* timeout) {
 		return wait_res == scheduler_impl_t::READY;
 	} else {
 		assert(!"not implemented yet");
+	}
+}
+
+void monitor_t::notify_one() {
+	if(!waiters_.empty()) {
+		waiters_.begin()->wakeup();
+	}
+}
+
+void monitor_t::notify_all() {
+	for(monitor_waiter_t& waiter : waiters_) {
+		waiter.wakeup();
 	}
 }
 
