@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <ev.h>
+#include <boost/intrusive/list.hpp>
 
 #include <raptor/core/spinlock.h>
 #include <raptor/core/time.h>
@@ -22,13 +23,11 @@ public:
 	virtual void before_switch_to() {}
 };
 
-class fiber_impl_t {
+namespace bi = boost::intrusive;
+
+class fiber_impl_t : public bi::list_base_hook<> {
 public:
 	fiber_impl_t(closure_t task, size_t stack_size = 4 * 1024 * 1024);
-
-	enum run_state_t {
-		RUNNING, SUSPENDED, TERMINATED
-	};
 
 	// [context:fiber]
 	// switch to ev loop context, invoke deferred callbacks
@@ -38,19 +37,11 @@ public:
 	// switch to fiber context
 	void switch_to();
 
-	void wakeup();
-
-	run_state_t state();
+	bool is_terminated();
 
 private:
-	spinlock_t lock_;
- 	// protected by lock
-	run_state_t run_state_;
-	bool woken_up_;
+	bool terminated_;
 
-	scheduler_impl_t* scheduler_;
-
-	// accessed only from fiber thread
 	internal::context_t context_;
 	closure_t task_;
 	deferred_t* deferred_;
@@ -58,6 +49,8 @@ private:
 
 	static void run_fiber(void* fiber);
 };
+
+struct monitor_t;
 
 class scheduler_impl_t {
 public:
@@ -70,22 +63,26 @@ public:
 
 	// [context:any] [thread:any]
 	void activate(fiber_impl_t* fiber);
+	void unlink_activate(fiber_impl_t* fiber);
 	void break_loop();
 
 	// [context:fiber] [thread:ev]
 	enum wait_result_t {
-		READY, TIMEDOUT, CANCELED
+		READY, TIMEDOUT
 	};
 
 	wait_result_t wait_io(int fd, int events, duration_t* timeout);
 	wait_result_t wait_timeout(duration_t* timeout);
+	wait_result_t wait_monitor(monitor_t* monitor, duration_t* timeout);
+
+	void switch_to();
 
 private:
 	struct ev_loop* ev_loop_;
 	internal::context_t ev_context_;
 
 	std::mutex activated_mutex_;
-	std::vector<fiber_impl_t*> activated_fibers_;
+	bi::list<fiber_impl_t> activated_fibers_;
 	ev_async activate_;
 
 	ev_async break_loop_;

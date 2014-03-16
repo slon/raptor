@@ -41,8 +41,8 @@ TEST(scheduler_impl_t, run_simple_fiber) {
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
 
-	ASSERT_TRUE(runned);
-	ASSERT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_TRUE(runned);
+	EXPECT_TRUE(fiber.is_terminated());
 }
 
 TEST(scheduler_impl_t, wait_io) {
@@ -60,13 +60,13 @@ TEST(scheduler_impl_t, wait_io) {
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
 
-	EXPECT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
+	EXPECT_FALSE(fiber.is_terminated());
 
 	ASSERT_TRUE(1 == write(fd[1], "0", 1));
 
 	scheduler.run(EVRUN_NOWAIT);
 
-	EXPECT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_TRUE(fiber.is_terminated());
 	EXPECT_EQ(scheduler_impl_t::READY, wait_res);
 
 	close(fd[0]); close(fd[1]);
@@ -87,13 +87,13 @@ TEST(scheduler_impl_t, wait_io_timeout) {
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
 
-	EXPECT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
+	EXPECT_FALSE(fiber.is_terminated());
 
 	scheduler.run(EVRUN_ONCE);
 	scheduler.run(EVRUN_ONCE);
 
 	EXPECT_EQ(scheduler_impl_t::TIMEDOUT, wait_res);
-	EXPECT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_TRUE(fiber.is_terminated());
 	EXPECT_GE(duration_t(0.0), duration);
 
 	close(fd[0]); close(fd[1]);
@@ -111,26 +111,33 @@ TEST(scheduler_impl_t, wait_timeout) {
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
 
-	EXPECT_EQ(fiber_impl_t::SUSPENDED, fiber.state());
+	EXPECT_FALSE(fiber.is_terminated());
 
 	scheduler.run(EVRUN_ONCE);
 	scheduler.run(EVRUN_ONCE);
 
 	EXPECT_EQ(scheduler_impl_t::READY, wait_res);
-	EXPECT_EQ(fiber_impl_t::TERMINATED, fiber.state());
+	EXPECT_TRUE(fiber.is_terminated());
 	EXPECT_GE(duration_t(0.0), duration);
 }
 
-struct running_scheduler_impl_t : public Test {
+struct running_scheduler_impl_test_t : public Test {
 	virtual void SetUp() {
-		t = std::thread([this] () { scheduler.run(); });
+		t1 = std::thread([this] () { scheduler1.run(); });
+		t2 = std::thread([this] () { scheduler2.run(); });
 	}
 
 	virtual void TearDown() {
-		scheduler.break_loop();
-		t.join();
+		scheduler1.break_loop();
+		scheduler2.break_loop();
+
+		t1.join();
+		t2.join();
 	}
 
-	std::thread t;
-	scheduler_impl_t scheduler;
+	scheduler_impl_t scheduler1;
+	scheduler_impl_t scheduler2;
+	std::thread t1, t2;
 };
+
+TEST_F(running_scheduler_impl_test_t, test_fixture) {}
