@@ -12,7 +12,7 @@ using namespace testing;
 using namespace raptor;
 
 struct stress_test_t : public Test {
-	size_t N_THREADS = 10;
+	size_t N_THREADS = 4;
 
 	virtual void SetUp() {
 		for(size_t i = 0; i < N_THREADS; ++i) {

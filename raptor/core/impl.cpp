@@ -22,6 +22,7 @@ fiber_impl_t::fiber_impl_t(closure_t task, size_t stack_size) :
 void fiber_impl_t::yield(deferred_t* deferred) {
 	deferred_ = deferred;
 	context_.switch_to(&SCHEDULER_IMPL->ev_context_);
+    deferred_ = nullptr;
 }
 
 bool fiber_impl_t::is_terminated() {
@@ -29,9 +30,10 @@ bool fiber_impl_t::is_terminated() {
 }
 
 void fiber_impl_t::switch_to() {
+	assert(!terminated_);
+
 	if(deferred_) {
 		deferred_->before_switch_to();
-		deferred_ = nullptr;
 	}
 
 	FIBER_IMPL = this;
@@ -70,7 +72,7 @@ scheduler_impl_t::~scheduler_impl_t() {
 }
 
 void scheduler_impl_t::run_activated() {
-	std::unique_lock<std::mutex> guard(activated_mutex_);
+	std::unique_lock<spinlock_t> guard(activated_lock_);
 	while(!activated_fibers_.empty()) {
 		fiber_impl_t* fiber = &activated_fibers_.front();
 		activated_fibers_.pop_front();
@@ -141,7 +143,9 @@ scheduler_impl_t::wait_result_t scheduler_impl_t::wait_io(int fd, int events, du
 }
 
 void scheduler_impl_t::activate(fiber_impl_t* fiber) {
- 	std::unique_lock<std::mutex> guard(activated_mutex_);
+	assert(!fiber->is_terminated());
+
+ 	std::unique_lock<spinlock_t> guard(activated_lock_);
 	if(fiber->is_linked()) return;
 	activated_fibers_.push_back(*fiber);
 	guard.unlock();
@@ -150,7 +154,7 @@ void scheduler_impl_t::activate(fiber_impl_t* fiber) {
 }
 
 void scheduler_impl_t::unlink_activate(fiber_impl_t* fiber) {
- 	std::unique_lock<std::mutex> guard(activated_mutex_);
+ 	std::unique_lock<spinlock_t> guard(activated_lock_);
 	if(fiber->is_linked()) {
 		activated_fibers_.erase(activated_fibers_.iterator_to(*fiber));
 	}
@@ -209,9 +213,9 @@ scheduler_impl_t::wait_result_t scheduler_impl_t::wait_queue(spinlock_t* queue_l
 
 	FIBER_IMPL->yield(&deferred);
 
-	if(timeout) {
-		unlink_activate(FIBER_IMPL);
+	unlink_activate(FIBER_IMPL);
 
+	if(timeout) {
 		*timeout -= duration_t(ev_now(ev_loop_) - start_wait);
 		ev_timer_stop(ev_loop_, &timer_timeout);
 	}

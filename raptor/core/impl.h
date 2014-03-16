@@ -40,7 +40,7 @@ public:
 	bool is_terminated();
 
 private:
-	bool terminated_;
+	std::atomic<bool> terminated_;
 
 	internal::context_t context_;
 	closure_t task_;
@@ -63,25 +63,26 @@ public:
 
 	// [context:any] [thread:any]
 	void activate(fiber_impl_t* fiber);
-	void unlink_activate(fiber_impl_t* fiber);
 	void break_loop();
 
 	// [context:fiber] [thread:ev]
 	enum wait_result_t {
 		READY, TIMEDOUT
 	};
-
+ 
 	wait_result_t wait_io(int fd, int events, duration_t* timeout);
 	wait_result_t wait_timeout(duration_t* timeout);
 	wait_result_t wait_queue(spinlock_t* queue_lock, duration_t* timeout);
 
 	void switch_to();
 
+	void unlink_activate(fiber_impl_t* fiber);
+
 private:
 	struct ev_loop* ev_loop_;
 	internal::context_t ev_context_;
 
-	std::mutex activated_mutex_;
+	spinlock_t activated_lock_;
 	bi::list<fiber_impl_t> activated_fibers_;
 	ev_async activate_;
 

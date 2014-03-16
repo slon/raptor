@@ -4,6 +4,7 @@
 
 #include <raptor/core/spinlock.h>
 #include <raptor/core/time.h>
+#include <raptor/core/no_copy_or_move.h>
 
 namespace bi = boost::intrusive;
 
@@ -13,7 +14,7 @@ struct queue_waiter_t : public bi::list_base_hook<> {
 	virtual void wakeup();
 };
 
-class wait_queue_t {
+class wait_queue_t : public no_copy_or_move_t {
 public:
 	wait_queue_t(spinlock_t* lock) : lock_(lock) {}
 
