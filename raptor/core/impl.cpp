@@ -244,7 +244,7 @@ void scheduler_impl_t::switch_to() {
 	FIBER_IMPL->yield(&deferred);
 }
 
-thread_local fiber_impl_t* FIBER_IMPL = nullptr;
-thread_local scheduler_impl_t* SCHEDULER_IMPL = nullptr;
+__thread fiber_impl_t* FIBER_IMPL = nullptr;
+__thread scheduler_impl_t* SCHEDULER_IMPL = nullptr;
 
 } // namespace raptor

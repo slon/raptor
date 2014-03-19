@@ -1,0 +1,2 @@
+libraptor.a usr/lib
+raptor/core/*.h usr/include/raptor/core

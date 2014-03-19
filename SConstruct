@@ -3,7 +3,8 @@ env = Environment()
 CPPFLAGS=[
     "-std=c++0x", "-g", "-fPIC", "-O3",
     "-isystem", "raptor/fixinclude",
-    "-isystem", "test/gmock"
+    "-isystem", "test/gmock",
+	"-fno-strict-aliasing"
 ]
 
 env.Append(CPPPATH=["."])

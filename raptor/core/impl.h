@@ -91,7 +91,7 @@ private:
 	friend class fiber_impl_t;
 };
 
-extern thread_local fiber_impl_t* FIBER_IMPL;
-extern thread_local scheduler_impl_t* SCHEDULER_IMPL;
+extern __thread fiber_impl_t* FIBER_IMPL;
+extern __thread scheduler_impl_t* SCHEDULER_IMPL;
 
 } // namespace raptor
