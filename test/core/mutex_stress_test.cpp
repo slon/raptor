@@ -4,7 +4,7 @@
 
 struct mutex_stress_test_t : public stress_test_t {
 	void run_test(int n_threads, bool jump_around, bool with_native) {
-		const int N_FIBERS = 1000, N_INCS = 1000, N_THREADS=4, N_THREAD_INCS = 100000;
+		const int N_FIBERS = 500, N_INCS = 500, N_THREADS=4, N_THREAD_INCS = 50000;
 
 		std::vector<std::unique_ptr<fiber_impl_t>> fibers;
 		std::vector<std::thread> threads;

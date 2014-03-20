@@ -11,7 +11,7 @@ public:
 	ring_buffer_t(size_t size) : buffer_(size + 1), wpos_(0), rpos_(0) {}
 
 	bool try_put(const x_t& x) {
-		if(full()) return false;
+		if(is_full()) return false;
 
 		buffer_[wpos_] = x;
 		wpos_ = (wpos_ + 1) % buffer_.size();
@@ -20,7 +20,7 @@ public:
 	}
 
 	bool try_get(x_t* x) {
-		if(empty()) false;
+		if(is_empty()) return false;
 
 		*x = std::move(buffer_[rpos_]);
 		rpos_ = (rpos_ + 1) % buffer_.size();
@@ -28,17 +28,17 @@ public:
 		return true;
 	}
 
-	bool empty() {
+	bool is_empty() {
 		return rpos_ == wpos_;
 	}
 
-	bool full() {
+	bool is_full() {
 		return ((wpos_ + 1) % buffer_.size()) == rpos_;
 	}
 
 private:
 	std::vector<x_t> buffer_;
-	int wpos_, rpos_;
+	size_t wpos_, rpos_;
 };
 
 
@@ -56,7 +56,7 @@ public:
 
 		notify_next();
 
-		return is_closed_;
+		return !is_closed_;
 	}
 
 	bool get(x_t* x) {
@@ -93,11 +93,11 @@ private:
 	bool is_closed_;
 
 	void notify_next() {
-		if(is_closed_ || !buffer_.empty()) {
+		if(is_closed_ || !buffer_.is_empty()) {
 			not_empty_.notify_one();
 		}
 
-		if(is_closed_ || !buffer_.full()) {
+		if(is_closed_ || !buffer_.is_full()) {
 			not_full_.notify_one();
 		}
 	}

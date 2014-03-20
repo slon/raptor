@@ -37,6 +37,8 @@ private:
 	}
 
 	void unlock_with_spinlock() {
+		assert(locked_);
+
 		locked_ = false;
 
 		queue_.notify_one();
@@ -58,10 +60,12 @@ public:
 	}
 
 	void notify_one() {
+		assert(mutex_->locked_);
 		queue_.notify_one();
 	}
 
 	void notify_all() {
+		assert(mutex_->locked_);
 		queue_.notify_all();
 	}
 
