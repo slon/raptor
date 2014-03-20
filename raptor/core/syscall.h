@@ -7,6 +7,6 @@
 
 namespace raptor {
 
-int rt_read(int fd, void *buf, size_t len);
+int rt_read(int fd, void *buf, size_t len, duration_t* timeout);
 
 } // namespace raptor
