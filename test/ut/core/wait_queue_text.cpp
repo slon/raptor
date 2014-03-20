@@ -20,11 +20,12 @@ struct wait_queue_test_t : public Test {
 
 TEST_F(wait_queue_test_t, fiber_wait) {
 	int wait_res = -1;
-	fiber_impl_t fiber([&wait_res, this] () {
+	closure_t task = [&wait_res, this] () {
 		lock.lock();
 		wait_res = queue.wait(nullptr);
 		lock.unlock();
-	});
+	};
+	fiber_impl_t fiber(&task);
 
 	scheduler.activate(&fiber);
 
@@ -46,11 +47,12 @@ TEST_F(wait_queue_test_t, fiber_wait) {
 TEST_F(wait_queue_test_t, fiber_wait_timeout) {
 	int wait_res = -1;
 	duration_t timeout = std::chrono::milliseconds(10);
-	fiber_impl_t fiber([&wait_res, &timeout, this] () {
+	closure_t task = [&wait_res, &timeout, this] () {
 		lock.lock();
 		wait_res = queue.wait(&timeout);
 		lock.unlock();
-	});
+	};
+	fiber_impl_t fiber(&task);
 
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);

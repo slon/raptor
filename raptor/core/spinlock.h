@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pthread.h>
+#include <mutex>
 
 namespace raptor {
 

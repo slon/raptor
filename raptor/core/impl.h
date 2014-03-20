@@ -27,12 +27,11 @@ namespace bi = boost::intrusive;
 
 class fiber_impl_t : public bi::list_base_hook<> {
 public:
-	fiber_impl_t(closure_t task, size_t stack_size = 4 * 1024 * 1024);
+	fiber_impl_t(closure_t* task, closure_t* terminate_cb = nullptr, size_t stack_size = 4 * 1024 * 1024);
 
 	// [context:fiber]
 	// switch to ev loop context, invoke deferred callbacks
 	void yield(deferred_t* deferred = nullptr);
-	void jump_to(scheduler_impl_t* scheduler);
 
 	// switch to fiber context
 	void switch_to();
@@ -43,7 +42,8 @@ private:
 	std::atomic<bool> terminated_;
 
 	internal::context_t context_;
-	closure_t task_;
+	closure_t* task_;
+	closure_t* terminate_cb_;
 	deferred_t* deferred_;
 	std::unique_ptr<char[]> stack_;
 

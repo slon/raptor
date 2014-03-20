@@ -8,19 +8,26 @@
 
 namespace raptor {
 
-class scheduler_t : public std::enable_shared_from_this<scheduler_t> {
+struct scheduler_state_t;
+
+class scheduler_t {
 public:
-	typedef std::shared_ptr<scheduler_t> ptr;
+	scheduler_t();
 
-	virtual fiber_t::ptr run(closure_t task) = 0;
-	virtual void switch_to() = 0;
+	template<class fn_t, class... args_t>
+	fiber_t start(fn_t& fn, args_t&... args) {
+		closure_t task(std::forward(fn), std::forward(args)...);
+		return start(std::move(task));
+	}
 
-	virtual void cancel() = 0;
-	virtual void join() = 0;
+	fiber_t start(closure_t&& closure);
 
-	virtual ~scheduler_t() {}
+	void switch_to();
+
+	void shutdown();
+
+private:
+	std::shared_ptr<scheduler_state_t> state_;
 };
-
-scheduler_t* this_scheduler();
 
 } // namespace raptor

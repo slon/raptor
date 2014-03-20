@@ -4,16 +4,33 @@
 
 namespace raptor {
 
+struct deferred_closure_t : public deferred_t {
+	deferred_closure_t(closure_t* closure) : closure(closure) {}
+
+	closure_t* closure;
+
+	virtual void after_yield() {
+		(*closure)();
+	}
+};
+
 void fiber_impl_t::run_fiber(void* arg) {
 	fiber_impl_t* fiber = (fiber_impl_t*)arg;
-	fiber->task_();
+	(*fiber->task_)();
 	fiber->terminated_ = true;
-	fiber->yield(nullptr);
+
+	if(fiber->terminate_cb_) {
+		deferred_closure_t deferred{fiber->terminate_cb_};
+		fiber->yield(&deferred);
+	} else {
+		fiber->yield(nullptr);
+	}
 }
 
-fiber_impl_t::fiber_impl_t(closure_t task, size_t stack_size) :
+fiber_impl_t::fiber_impl_t(closure_t* task, closure_t* terminate_cb, size_t stack_size) :
 		terminated_(false),
 		task_(task),
+		terminate_cb_(terminate_cb),
 		deferred_(nullptr),
 		stack_(new char[stack_size]) {
 	context_.create(stack_.get(), stack_size, run_fiber, this);

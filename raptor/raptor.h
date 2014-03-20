@@ -1,7 +1,9 @@
 #pragma once
 
-#include <raptor/fiber.h>
-#include <raptor/scheduler.h>
-#include <raptor/mutex.h>
-#include <raptor/channel.h>
-#include <raptor/future.h>
+#include <raptor/core/fiber.h>
+#include <raptor/core/scheduler.h>
+#include <raptor/core/mutex.h>
+#include <raptor/core/channel.h>
+#include <raptor/core/future.h>
+#include <raptor/core/shared_mutex.h>
+#include <raptor/core/syscall.h>

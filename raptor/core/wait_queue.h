@@ -11,6 +11,9 @@ namespace bi = boost::intrusive;
 namespace raptor {
 
 struct queue_waiter_t : public bi::list_base_hook<> {
+	queue_waiter_t() : wakeup_next(false) {}
+
+	bool wakeup_next;
 	virtual void wakeup();
 };
 

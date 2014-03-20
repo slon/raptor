@@ -34,9 +34,10 @@ TEST(scheduler_impl_t, run_simple_fiber) {
 	scheduler_impl_t scheduler;
 
 	bool runned = false;
-	fiber_impl_t fiber([&runned] () mutable {
+	closure_t task = [&runned] () mutable {
 		runned = true;
-	});
+	};
+	fiber_impl_t fiber(&task);
 
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
@@ -44,6 +45,22 @@ TEST(scheduler_impl_t, run_simple_fiber) {
 	EXPECT_TRUE(runned);
 	EXPECT_TRUE(fiber.is_terminated());
 }
+
+TEST(scheduler_impl_t, run_terminate_cb) {
+	scheduler_impl_t scheduler;
+
+	bool runned = false;
+	closure_t task = [] () {};
+	closure_t terminate_cb = [&runned] () { runned = true; };
+	fiber_impl_t fiber(&task, &terminate_cb);
+
+	scheduler.activate(&fiber);
+	scheduler.run(EVRUN_NOWAIT);
+
+	EXPECT_TRUE(runned);
+	EXPECT_TRUE(fiber.is_terminated());
+}
+
 
 TEST(scheduler_impl_t, wait_io) {
 	int fd[2];
@@ -53,9 +70,10 @@ TEST(scheduler_impl_t, wait_io) {
 	scheduler_impl_t scheduler;
 
 	int wait_res = -1;
-	fiber_impl_t fiber([fd, &wait_res] () {
+	closure_t task = [fd, &wait_res] () {
 		wait_res = SCHEDULER_IMPL->wait_io(fd[0], EV_READ, nullptr);
-	});
+	};
+	fiber_impl_t fiber(&task);
 
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
@@ -80,9 +98,10 @@ TEST(scheduler_impl_t, wait_io_timeout) {
 
 	int wait_res = -1;
 	duration_t duration = std::chrono::milliseconds(10);
-	fiber_impl_t fiber([fd, &wait_res, &duration] () {
+	closure_t task = [fd, &wait_res, &duration] () {
 		wait_res = SCHEDULER_IMPL->wait_io(fd[0], EV_READ, &duration);
-	});
+	};
+	fiber_impl_t fiber(&task);
 
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);
@@ -104,9 +123,10 @@ TEST(scheduler_impl_t, wait_timeout) {
 
 	int wait_res = -1;
 	duration_t duration = std::chrono::milliseconds(10);
-	fiber_impl_t fiber([&wait_res, &duration] () {
+	closure_t task = [&wait_res, &duration] () {
 		wait_res = SCHEDULER_IMPL->wait_timeout(&duration);
-	});
+	};
+	fiber_impl_t fiber(&task);
 
 	scheduler.activate(&fiber);
 	scheduler.run(EVRUN_NOWAIT);

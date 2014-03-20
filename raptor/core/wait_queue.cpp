@@ -21,12 +21,35 @@ struct fiber_waiter_t : public queue_waiter_t {
 };
 
 struct native_waiter_t : public queue_waiter_t {
-	std::mutex lock;
+	std::mutex mutex;
 	std::condition_variable ready;
 
-	void wait(duration_t* timeout) {}
+	spinlock_t* queue_lock;
 
-	virtual void wakeup() {}
+	bool wait(duration_t* timeout) {
+		std::unique_lock<std::mutex> guard(mutex);
+		queue_lock->unlock();
+
+		std::cv_status res = std::cv_status::no_timeout;
+
+		if(timeout) {
+			auto start = std::chrono::system_clock::now();
+			res = ready.wait_for(guard, *timeout);	
+			*timeout -= (std::chrono::system_clock::now() - start);
+		} else {
+			ready.wait(guard);
+		}
+
+		guard.unlock();
+		queue_lock->lock();
+
+		return res == std::cv_status::no_timeout;
+	}
+
+	virtual void wakeup() {
+		std::lock_guard<std::mutex> guard(mutex);
+		ready.notify_one();
+	}
 };
 
 bool wait_queue_t::wait(duration_t* timeout) {
@@ -37,9 +60,25 @@ bool wait_queue_t::wait(duration_t* timeout) {
 		auto wait_res = SCHEDULER_IMPL->wait_queue(lock_, timeout);
 
 		waiters_.erase(waiters_.iterator_to(waiter));
+
+		if(waiter.wakeup_next)
+			notify_one();
+
 		return wait_res == scheduler_impl_t::READY;
 	} else {
-		assert(!"not implemented yet");
+		native_waiter_t waiter;
+		waiter.queue_lock = lock_;
+
+		waiters_.push_back(waiter);
+
+		bool wait_successfull = waiter.wait(timeout);
+
+		waiters_.erase(waiters_.iterator_to(waiter));
+
+		if(waiter.wakeup_next)
+			notify_one();
+
+		return wait_successfull;
 	}
 }
 
@@ -50,9 +89,13 @@ void wait_queue_t::notify_one() {
 }
 
 void wait_queue_t::notify_all() {
-	for(queue_waiter_t& waiter : waiters_) {
-		waiter.wakeup();
-	}
+	if(!waiters_.empty()) {
+		auto last = --waiters_.end();
+		for(auto waiter_it = waiters_.begin(); waiter_it != last; ++waiter_it) {
+			waiter_it->wakeup_next = true;
+		}
+		waiters_.begin()->wakeup();
+	}	
 }
 
 } // namespace raptor
