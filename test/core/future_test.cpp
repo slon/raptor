@@ -118,3 +118,40 @@ TEST(future_test_t, then_on_exception_future) {
 	EXPECT_TRUE(next_future.has_exception());
 	EXPECT_THROW(next_future.get(), std::runtime_error);
 }
+
+TEST(future_test_t, then_silence_exception) {
+	future_t<int> future = make_exception_future<int>(std::runtime_error(""));
+
+	future_t<int> future2 = future.then([] (future_t<int> f) { return 2; });
+	EXPECT_TRUE(future2.has_value());
+	EXPECT_EQ(2, future2.get());
+}
+
+TEST(future_test_t, then_on_blocking_future) {
+	promise_t<int> p;
+	future_t<int> f = p.get_future();
+
+	future_t<double> f2 = f.then([] (future_t<int> x) { return x.get() + 1.0; });
+	future_t<void> f3 = f.then([] (future_t<int>) -> void { throw std::runtime_error(""); });
+
+	EXPECT_FALSE(f2.is_ready());
+	EXPECT_FALSE(f3.is_ready());
+
+	p.set_value(1);
+
+	EXPECT_TRUE(f2.has_value());
+	EXPECT_DOUBLE_EQ(2.0, f2.get());
+
+	EXPECT_TRUE(f3.has_exception());
+	EXPECT_THROW(f3.get(), std::runtime_error);
+}
+
+TEST(future_test_t, then_on_exception_blocking_future) {
+	promise_t<int> p;
+	future_t<int> f = p.get_future();
+
+	future_t<void> f2 = f.then([] (const future_t<int>& f) { f.get(); });
+	EXPECT_FALSE(f2.is_ready());
+
+	p.set_exception(std::make_exception_ptr(std::runtime_error("")));
+}

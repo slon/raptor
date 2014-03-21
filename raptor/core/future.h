@@ -163,42 +163,42 @@ public:
 	typedef x_t value_t;
 	typedef typename std::add_lvalue_reference<typename std::add_const<x_t>::type>::type x_const_ref_t;
 
-	x_const_ref_t get() {
+	x_const_ref_t get() const {
 		assert(state_);
 		return state_->get();
 	}
 
-	std::exception_ptr get_exception() {
+	std::exception_ptr get_exception() const {
 		assert(state_);
 		return state_->get_exception();
 	}
 
-	bool is_ready() {
+	bool is_ready() const {
 		assert(state_);
 		return state_->is_ready();
 	}
 
-	bool is_valid() {
+	bool is_valid() const {
 		return state_ != nullptr;
 	}
 
-	bool has_value() {
+	bool has_value() const {
 		assert(state_);
 		return state_->has_value();
 	}
 
-	bool has_exception() {
+	bool has_exception() const {
 		assert(state_);
 		return state_->has_exception();
 	}
 
-	bool wait(duration_t* timeout = nullptr) {
+	bool wait(duration_t* timeout = nullptr) const {
 		assert(state_);
 		return state_->wait(timeout);
 	}
 
 	template<class fn_t>
-	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> {
+	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const {
 		assert(state_);
 		typedef decltype(fn(future_t<x_t>())) y_t;
 
@@ -221,7 +221,7 @@ public:
 	}
 
 	template<class fn_t>
-	auto then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> {
+	auto then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const {
 		return then(nullptr, fn);
 	}
 
@@ -236,7 +236,7 @@ class promise_t {
 public:
 	promise_t() : state_(std::make_shared<shared_state_t<x_t>>()) {}
 
-	future_t<x_t> get_future() {
+	future_t<x_t> get_future() const {
 		return future_t<x_t>(state_);
 	}
 
