@@ -9,6 +9,17 @@ TEST(scheduler_test_t, create_shutdown) {
 	s.shutdown();
 }
 
+TEST(scheduler_test_t, fiber_destroys_captures_vars) {
+	scheduler_t s;
+
+	auto ptr = std::make_shared<int>(1);
+	s.start([ptr] () { *ptr += 1; }).join();
+
+	s.shutdown();
+
+	EXPECT_TRUE(ptr.unique());
+}
+
 TEST(scheduler_test_t, start_fiber) {
 	bool runned = false;
 

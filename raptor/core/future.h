@@ -5,7 +5,7 @@
 #include <type_traits>
 
 #include <raptor/core/wait_queue.h>
-#include <raptor/core/closure.h>
+#include <raptor/core/executor.h>
 
 namespace raptor {
 
@@ -57,14 +57,14 @@ public:
 		return state_ == EXCEPTION;		
 	}
 
-	void subscribe(closure_t&& cb) {
+	void subscribe(closure_t closure) {
 		std::unique_lock<spinlock_t> guard(lock_);
 
 		if(state_ == EMPTY) {
-			subscribers_.emplace_back(cb);
+			subscribers_.emplace_back(std::move(closure));
 		} else {
 			guard.unlock();
-			cb();
+			closure.run();
 		}
 	}
 
@@ -89,8 +89,8 @@ protected:
 
 		guard.unlock();
 
-		for(const auto& cb : subscribers) {
-			cb();
+		for(const auto& closure : subscribers) {
+			closure.run();
 		}
 	}
 };
@@ -150,6 +150,9 @@ public:
 };
 
 template<class x_t>
+class future_value_trait_t;
+
+template<class x_t>
 class future_t {
 private:
 	explicit future_t(std::shared_ptr<shared_state_t<x_t>> state) : state_(state) {}
@@ -157,6 +160,7 @@ private:
 public:
 	future_t() {}
 
+	typedef x_t value_t;
 	typedef typename std::add_lvalue_reference<typename std::add_const<x_t>::type>::type x_const_ref_t;
 
 	x_const_ref_t get() {
@@ -191,6 +195,34 @@ public:
 	bool wait(duration_t* timeout = nullptr) {
 		assert(state_);
 		return state_->wait(timeout);
+	}
+
+	template<class fn_t>
+	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> {
+		assert(state_);
+		typedef decltype(fn(future_t<x_t>())) y_t;
+
+		promise_t<y_t> chained_promise;
+		future_t<y_t> chained_future = chained_promise.get_future();
+
+		closure_t subscriber(executor, [fn, chained_promise, state_] () mutable {
+			future_t<x_t> future(state_);
+
+			try {
+				future_value_trait_t<y_t>::apply_and_set_value(&chained_promise, &future, &fn);
+			} catch(...) {
+				chained_promise.set_exception(std::current_exception());
+			}
+		});
+
+		state_->subscribe(subscriber);
+
+		return chained_future;
+	}
+
+	template<class fn_t>
+	auto then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> {
+		return then(nullptr, fn);
 	}
 
 	friend class promise_t<x_t>;
@@ -248,5 +280,30 @@ future_t<x_t> make_exception_future(std::exception_ptr err) {
 	promise.set_exception(err);
 	return promise.get_future();
 }
+
+template<class x_t>
+struct future_value_trait_t {
+	template<class y_t, class fn_t>
+	static void apply_and_set_value(
+		promise_t<x_t>* promise,
+		future_t<y_t>* future,
+		fn_t* f
+	) {
+		promise->set_value((*f)(*future));
+	}
+};
+
+template<>
+struct future_value_trait_t<void> {
+	template<class y_t, class fn_t>
+	static void apply_and_set_value(
+		promise_t<void>* promise,
+		future_t<y_t>* future,
+		fn_t* f
+	) {
+		(*f)(*future);
+		promise->set_value();
+	}
+};
 
 } // namespace raptor

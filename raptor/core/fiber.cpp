@@ -6,25 +6,26 @@
 namespace raptor {
 
 struct fiber_state_t {
-	fiber_state_t(closure_t&& _task) :
+	fiber_state_t(std::function<void()> _task) :
 		task(std::move(_task)),
 		terminate_cb([this] () {
 			terminated.signal();
+			task = nullptr;
 			this_ptr.reset();
 		}),
 		impl(&task, &terminate_cb) {}
 
 	signal_t terminated;
 
-	closure_t task;
-	closure_t terminate_cb;
+	std::function<void()> task;
+	std::function<void()> terminate_cb;
 
 	fiber_impl_t impl;
 
 	std::shared_ptr<fiber_state_t> this_ptr;
 };
 
-fiber_t::fiber_t(closure_t&& task) :
+fiber_t::fiber_t(std::function<void()> task) :
 		state_(std::make_shared<fiber_state_t>(std::move(task))) {
 	state_->this_ptr = state_;
 }

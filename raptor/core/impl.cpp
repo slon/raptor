@@ -5,9 +5,9 @@
 namespace raptor {
 
 struct deferred_closure_t : public deferred_t {
-	deferred_closure_t(closure_t* closure) : closure(closure) {}
+	deferred_closure_t(std::function<void()>* closure) : closure(closure) {}
 
-	closure_t* closure;
+	std::function<void()>* closure;
 
 	virtual void after_yield() {
 		(*closure)();
@@ -27,7 +27,7 @@ void fiber_impl_t::run_fiber(void* arg) {
 	}
 }
 
-fiber_impl_t::fiber_impl_t(closure_t* task, closure_t* terminate_cb, size_t stack_size) :
+fiber_impl_t::fiber_impl_t(std::function<void()>* task, std::function<void()>* terminate_cb, size_t stack_size) :
 		terminated_(false),
 		task_(task),
 		terminate_cb_(terminate_cb),

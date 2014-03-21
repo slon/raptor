@@ -12,7 +12,7 @@ struct mutex_stress_test_t : public stress_test_t {
 		mutex_t mutex;
 		int value = 0;
 
-		closure_t lock_inc_unlock = [&] () {
+		std::function<void()> lock_inc_unlock = [&] () {
 			for(int i = 0; i < N_INCS; ++i) {
 				int old_value;
 

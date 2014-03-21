@@ -3,7 +3,6 @@
 #include <memory>
 
 #include <raptor/core/time.h>
-#include <raptor/core/closure.h>
 #include <raptor/core/signal.h>
 
 namespace raptor {
@@ -18,7 +17,7 @@ public:
 	void join();
 
 private:
-	fiber_t(closure_t&& task);
+	fiber_t(std::function<void()> task);
 	fiber_impl_t* get_impl();
 
 	friend class scheduler_t;

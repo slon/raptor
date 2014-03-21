@@ -186,7 +186,7 @@ struct channel_stress_test_t : public ::testing::Test {
 	std::vector<scheduler_t> schedulers;
 	int next_scheduler;
 
-	fiber_t make_fiber(closure_t c) {
+	fiber_t make_fiber(std::function<void()> c) {
 		return schedulers[next_scheduler++ % schedulers.size()].start(c);
 	}
 };

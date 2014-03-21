@@ -4,7 +4,6 @@
 
 #include <raptor/core/fiber.h>
 #include <raptor/core/time.h>
-#include <raptor/core/closure.h>
 
 namespace raptor {
 
@@ -16,11 +15,11 @@ public:
 
 	template<class fn_t, class... args_t>
 	fiber_t start(fn_t& fn, args_t&... args) {
-		closure_t task(std::forward<fn_t>(fn), std::forward<args_t>(args)...);
+		std::function<void()> task(std::forward<fn_t>(fn), std::forward<args_t>(args)...);
 		return start(std::move(task));
 	}
 
-	fiber_t start(closure_t&& closure);
+	fiber_t start(std::function<void()> closure);
 
 	void switch_to();
 

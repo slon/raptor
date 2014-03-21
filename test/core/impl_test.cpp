@@ -34,7 +34,7 @@ TEST(scheduler_impl_t, run_simple_fiber) {
 	scheduler_impl_t scheduler;
 
 	bool runned = false;
-	closure_t task = [&runned] () mutable {
+	std::function<void()> task = [&runned] () mutable {
 		runned = true;
 	};
 	fiber_impl_t fiber(&task);
@@ -50,8 +50,8 @@ TEST(scheduler_impl_t, run_terminate_cb) {
 	scheduler_impl_t scheduler;
 
 	bool runned = false;
-	closure_t task = [] () {};
-	closure_t terminate_cb = [&runned] () { runned = true; };
+	std::function<void()> task = [] () {};
+	std::function<void()> terminate_cb = [&runned] () { runned = true; };
 	fiber_impl_t fiber(&task, &terminate_cb);
 
 	scheduler.activate(&fiber);
@@ -70,7 +70,7 @@ TEST(scheduler_impl_t, wait_io) {
 	scheduler_impl_t scheduler;
 
 	int wait_res = -1;
-	closure_t task = [fd, &wait_res] () {
+	std::function<void()> task = [fd, &wait_res] () {
 		wait_res = SCHEDULER_IMPL->wait_io(fd[0], EV_READ, nullptr);
 	};
 	fiber_impl_t fiber(&task);
@@ -98,7 +98,7 @@ TEST(scheduler_impl_t, wait_io_timeout) {
 
 	int wait_res = -1;
 	duration_t duration = std::chrono::milliseconds(10);
-	closure_t task = [fd, &wait_res, &duration] () {
+	std::function<void()> task = [fd, &wait_res, &duration] () {
 		wait_res = SCHEDULER_IMPL->wait_io(fd[0], EV_READ, &duration);
 	};
 	fiber_impl_t fiber(&task);
@@ -123,7 +123,7 @@ TEST(scheduler_impl_t, wait_timeout) {
 
 	int wait_res = -1;
 	duration_t duration = std::chrono::milliseconds(10);
-	closure_t task = [&wait_res, &duration] () {
+	std::function<void()> task = [&wait_res, &duration] () {
 		wait_res = SCHEDULER_IMPL->wait_timeout(&duration);
 	};
 	fiber_impl_t fiber(&task);

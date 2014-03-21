@@ -20,7 +20,7 @@ struct wait_queue_test_t : public Test {
 
 TEST_F(wait_queue_test_t, fiber_wait) {
 	int wait_res = -1;
-	closure_t task = [&wait_res, this] () {
+	std::function<void()> task = [&wait_res, this] () {
 		lock.lock();
 		wait_res = queue.wait(nullptr);
 		lock.unlock();
@@ -47,7 +47,7 @@ TEST_F(wait_queue_test_t, fiber_wait) {
 TEST_F(wait_queue_test_t, fiber_wait_timeout) {
 	int wait_res = -1;
 	duration_t timeout = std::chrono::milliseconds(10);
-	closure_t task = [&wait_res, &timeout, this] () {
+	std::function<void()> task = [&wait_res, &timeout, this] () {
 		lock.lock();
 		wait_res = queue.wait(&timeout);
 		lock.unlock();
