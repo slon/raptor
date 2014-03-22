@@ -9,301 +9,116 @@
 
 namespace raptor {
 
-template<class x_t> class future_t;
 template<class x_t> class promise_t;
-
-class shared_state_base_t {
-public:
-	shared_state_base_t() : queue_(&lock_), state_(EMPTY) {}
-
-	std::exception_ptr get_exception() {
-		wait(NULL);
-		assert(state_ == EXCEPTION);
-		return err_;
-	}
-
-	bool wait(duration_t* timeout) {
-		std::lock_guard<spinlock_t> guard(lock_);
-
-		while(state_ == EMPTY) {
-			if(!queue_.wait(timeout)) return false;
-		}
-
-		return true;
-	}
-
-	void set_exception(std::exception_ptr err) {
-		std::unique_lock<spinlock_t> guard(lock_);
-
-		assert(state_ == EMPTY);
-		state_ = EXCEPTION;
-		err_ = err;
-
-		notify_subscribers(guard);
-	}
-
-	bool is_ready() {
-		std::lock_guard<spinlock_t> guard(lock_);
-		return state_ != EMPTY;
-	}
-
-	bool has_value() {
-		std::lock_guard<spinlock_t> guard(lock_);
-		return state_ == VALUE;		
-	}
-
-	bool has_exception() {
-		std::lock_guard<spinlock_t> guard(lock_);
-		return state_ == EXCEPTION;		
-	}
-
-	void subscribe(closure_t closure) {
-		std::unique_lock<spinlock_t> guard(lock_);
-
-		if(state_ == EMPTY) {
-			subscribers_.emplace_back(std::move(closure));
-		} else {
-			guard.unlock();
-			closure.run();
-		}
-	}
-
-protected:
-	spinlock_t lock_;
-	wait_queue_t queue_;
-
-	enum state_t {
-		EMPTY, VALUE, EXCEPTION
-	};
-
-	state_t state_;
-
-	std::exception_ptr err_;
-	std::vector<closure_t> subscribers_;
-
-	void notify_subscribers(std::unique_lock<spinlock_t>& guard) {
-		queue_.notify_all();
-
-		std::vector<closure_t> subscribers;
-		subscribers.swap(subscribers_);
-
-		guard.unlock();
-
-		for(const auto& closure : subscribers) {
-			closure.run();
-		}
-	}
-};
-
-template<class x_t>
-class shared_state_t : public shared_state_base_t {
-public:
-	const x_t& get() {
-		wait(nullptr);
-
-		if(state_ == EXCEPTION) {
-			std::rethrow_exception(err_);
-		} else {
-			return *value_;
-		}
-	}
-
-	void set_value(const x_t& value) {
-		std::unique_lock<spinlock_t> guard(lock_);
-
-		assert(state_ == EMPTY);
-		state_ = VALUE;
-		value_.reset(new x_t(value));
-
-		notify_subscribers(guard);
-	}
-
-	friend class future_t<x_t>;
-	friend class promise_t<x_t>;
-
-private:
-	std::unique_ptr<x_t> value_;
-};
-
-template<>
-class shared_state_t<void> : public shared_state_base_t {
-public:
-	void get() {
-		wait(nullptr);
-
-		if(state_ == EXCEPTION) {
-			std::rethrow_exception(err_);
-		}
-	}
-
-	void set_value() {
-		std::unique_lock<spinlock_t> guard(lock_);
-
-		assert(state_ == EMPTY);
-		state_ = VALUE;
-
-		notify_subscribers(guard);
-	}
-
-	friend class future_t<void>;
-	friend class promise_t<void>;
-};
 
 template<class x_t>
 class future_value_trait_t;
 
+template<class x_t> class shared_state_t;
+
+// read-only result of asyncronous operation or exception describing why operation failed
 template<class x_t>
 class future_t {
-private:
-	explicit future_t(std::shared_ptr<shared_state_t<x_t>> state) : state_(state) {}
-
 public:
+	// create future with empty state
 	future_t() {}
 
-	typedef x_t value_t;
+	// just 'const x_t&', than compiles when x_t is void
 	typedef typename std::add_lvalue_reference<typename std::add_const<x_t>::type>::type x_const_ref_t;
 
-	x_const_ref_t get() const {
-		assert(state_);
-		return state_->get();
-	}
+	// block untill future is ready and then return value or throw exception
+	x_const_ref_t get() const;
 
-	std::exception_ptr get_exception() const {
-		assert(state_);
-		return state_->get_exception();
-	}
+	// block untill future is ready and return exception
+	std::exception_ptr get_exception() const;
 
-	bool is_ready() const {
-		assert(state_);
-		return state_->is_ready();
-	}
+	// is_valid() == false for default constructed future
+	// is_valid() == true of future obtained from promise.get_future
+	// or future.then()
+	bool is_valid() const;
 
-	bool is_valid() const {
-		return state_ != nullptr;
-	}
+	// should be obvious?
+	bool is_ready() const;
+	bool has_value() const;
+	bool has_exception() const;
 
-	bool has_value() const {
-		assert(state_);
-		return state_->has_value();
-	}
+	// wait untill future is ready or timeout occur
+	bool wait(duration_t* timeout = nullptr) const;
 
-	bool has_exception() const {
-		assert(state_);
-		return state_->has_exception();
-	}
+	// asyncronously apply function to this future and return future
+	// representing the result of this call
+	//
+    // Example:
+	//
+    // json_t parse_json(future_t<http_request_t> raw_request);
+	//
+	// future_t<http_request_t> http_request = make_request("http://yandex.com");
+    // future_t<json_t> json = http_request.then(parse_json);
+	//
+	template<class fn_t>
+	auto then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
 
-	bool wait(duration_t* timeout = nullptr) const {
-		assert(state_);
-		return state_->wait(timeout);
-	}
+	// asyncronously apply function than also returns future
+	// f.then_get(g) is almost the same as f.then(g).get()
+	//
+	// Example:
+	//
+	// future_t<netaddr_t> getaddrinfo(std::string host, int port);
+	// future_t<socket_t> connect(future_t<netaddr_t> addr);
+	//
+	// future_t<socket_t> socket = getaddrinfo("yandex.ru", 80).then(connect);
+	template<class fn_t>
+	auto then_get(fn_t&& fn) -> decltype(fn(future_t<x_t>())) const;
+
+	// same as above, additionally specifying executor that will run the chained function
+	template<class fn_t>
+	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
 
 	template<class fn_t>
-	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const {
-		assert(state_);
-		typedef decltype(fn(future_t<x_t>())) y_t;
+	auto then_get(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
 
-		promise_t<y_t> chained_promise;
-		future_t<y_t> chained_future = chained_promise.get_future();
-
-		closure_t subscriber(executor, [fn, chained_promise, state_] () mutable {
-			future_t<x_t> future(state_);
-
-			try {
-				future_value_trait_t<y_t>::apply_and_set_value(&chained_promise, &future, &fn);
-			} catch(...) {
-				chained_promise.set_exception(std::current_exception());
-			}
-		});
-
-		state_->subscribe(subscriber);
-
-		return chained_future;
-	}
-
-	template<class fn_t>
-	auto then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const {
-		return then(nullptr, fn);
-	}
 
 	friend class promise_t<x_t>;
 
 private:
+	explicit future_t(std::shared_ptr<shared_state_t<x_t>> state) : state_(state) {}
+
 	std::shared_ptr<shared_state_t<x_t>> state_;
 };
 
 template<class x_t>
 class promise_t {
 public:
-	promise_t() : state_(std::make_shared<shared_state_t<x_t>>()) {}
+	promise_t();
 
-	future_t<x_t> get_future() const {
-		return future_t<x_t>(state_);
-	}
+	// get future associated with this promise
+	future_t<x_t> get_future() const;
 
-	// magic required for future_t<void>
-	template<class... args_t>
-	void set_value(const args_t&... args) {
-		state_->set_value(args...);
-	}
+	// set value of the associated future, void version
+	void set_value();
 
-	void set_exception(std::exception_ptr err) {
-		state_->set_exception(err);
-	}
+	// set value of the associated future, non void version
+	template<class y_t>
+	void set_value(const y_t& value);
+
+	// set exception of the associated future
+	void set_exception(std::exception_ptr err);
 
 private:
 	std::shared_ptr<shared_state_t<x_t>> state_;
 };
 
+// make future from value
 template<class x_t>
-future_t<x_t> make_ready_future(const x_t& x) {
-	promise_t<x_t> promise;
-	promise.set_value(x);
-	return promise.get_future();
-}
+future_t<x_t> make_ready_future(const x_t& x);
+future_t<void> make_ready_future();
 
-future_t<void> make_ready_future() {
-	promise_t<void> promise;
-	promise.set_value();
-	return promise.get_future();
-}
-
+// make future from exception
 template<class x_t, class exception_t>
-future_t<x_t> make_exception_future(const exception_t& err) {
-	promise_t<x_t> promise;
-	promise.set_exception(std::make_exception_ptr(err));
-	return promise.get_future();
-}
-
+future_t<x_t> make_exception_future(const exception_t& err);
 template<class x_t>
-future_t<x_t> make_exception_future(std::exception_ptr err) {
-	promise_t<x_t> promise;
-	promise.set_exception(err);
-	return promise.get_future();
-}
-
-template<class x_t>
-struct future_value_trait_t {
-	template<class y_t, class fn_t>
-	static void apply_and_set_value(
-		promise_t<x_t>* promise,
-		future_t<y_t>* future,
-		fn_t* f
-	) {
-		promise->set_value((*f)(*future));
-	}
-};
-
-template<>
-struct future_value_trait_t<void> {
-	template<class y_t, class fn_t>
-	static void apply_and_set_value(
-		promise_t<void>* promise,
-		future_t<y_t>* future,
-		fn_t* f
-	) {
-		(*f)(*future);
-		promise->set_value();
-	}
-};
+future_t<x_t> make_exception_future(std::exception_ptr err);
 
 } // namespace raptor
+
+#include <raptor/core/future-inl.h>
