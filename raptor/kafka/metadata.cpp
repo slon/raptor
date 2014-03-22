@@ -6,7 +6,7 @@
 
 #include <raptor/kafka/exception.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 void metadata_t::update(const metadata_response_t& response) {
 	brokers_.clear();
@@ -82,4 +82,4 @@ void metadata_t::add_broker(const std::string& host, uint16_t port) {
 	bootstrap_brokers_.push_back({ host, port });
 }
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

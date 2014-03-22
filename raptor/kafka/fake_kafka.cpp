@@ -11,7 +11,7 @@
 #include <phantom/pd.H>
 #include <raptor/kafka/kafka.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class fake_log_t {
 public:
@@ -121,4 +121,4 @@ config_binding_ctor(kafka_t, fake_kafka_t);
 config_binding_value(fake_kafka_t, max_log_size);
 } // namespace fake_kafka
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

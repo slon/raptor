@@ -5,7 +5,7 @@
 
 #include <raptor/kafka/message_set.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class hooks_t {
 public:
@@ -26,4 +26,4 @@ public:
 	virtual ~hooks_t() {}
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

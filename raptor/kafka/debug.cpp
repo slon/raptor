@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 std::string maybe_err_str(kafka_err_t err) {
     if(err != kafka_err_t::NO_ERROR) {
@@ -62,4 +62,4 @@ std::ostream& operator << (std::ostream& stream,
 }
 
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

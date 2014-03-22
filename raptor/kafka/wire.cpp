@@ -14,7 +14,7 @@
 
 #include <raptor/kafka/exception.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 static const size_t MAX_STRING_SIZE = 1024;
 
@@ -251,4 +251,4 @@ void wire_reader_t::jump(size_t pos) {
     pos_ = pos;
 }
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

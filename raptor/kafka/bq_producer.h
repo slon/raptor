@@ -10,7 +10,7 @@
 #include <raptor/kafka/options.h>
 #include <raptor/kafka/hooks.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class network_t;
 class link_t;
@@ -55,4 +55,4 @@ private:
     bool send(message_set_t message_set);
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

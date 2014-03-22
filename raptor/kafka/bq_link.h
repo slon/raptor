@@ -7,7 +7,7 @@
 #include <raptor/kafka/wire.h>
 #include <raptor/kafka/link.h>
 
-namespace phantom {
+namespace raptor {
 
 class scheduler_t;
 
@@ -46,4 +46,4 @@ private:
 	void recv_loop();
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

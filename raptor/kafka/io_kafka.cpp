@@ -18,7 +18,7 @@
 #include <raptor/kafka/request.h>
 #include <raptor/kafka/response.h>
 
-namespace phantom {
+namespace raptor {
 
 using namespace io_kafka;
 
@@ -163,4 +163,4 @@ config_binding_cast(io_kafka_t, kafka_t);
 config_binding_value(io_kafka_t, brokers);
 }
 
-} // namespace phantom
+} // namespace raptor

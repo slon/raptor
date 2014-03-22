@@ -6,7 +6,7 @@
 #include <raptor/kafka/exception.h>
 #include <raptor/kafka/blob.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 template<class int_t>
 int_t check_range(int_t value,
@@ -114,4 +114,4 @@ private:
     size_t pos_;
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

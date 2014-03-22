@@ -4,7 +4,7 @@
 
 #include <raptor/kafka/exception.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 // refcounted, immutable byte buffer
 struct blob_t {
@@ -36,4 +36,4 @@ private:
 	size_t start_;
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

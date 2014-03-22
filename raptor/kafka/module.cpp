@@ -1,5 +1,5 @@
 #include <phantom/module.H>
 
-namespace phantom {
+namespace raptor {
 MODULE(io_kafka);
-} // namespace phantom
+} // namespace raptor

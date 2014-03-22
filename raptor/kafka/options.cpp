@@ -1,6 +1,6 @@
 #include <raptor/kafka/options.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 options_t default_options() {
     options_t options;
@@ -19,4 +19,4 @@ options_t default_options() {
     return options;
 }
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

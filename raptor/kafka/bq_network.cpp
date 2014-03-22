@@ -15,7 +15,7 @@
 #include <raptor/kafka/request.h>
 #include <raptor/kafka/response.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 fd_t connect(const std::string& host, uint16_t port) {
 	std::string port_str = std::to_string(port);
@@ -143,4 +143,4 @@ future_t<link_ptr_t> bq_network_t::get_link(const std::string& topic, partition_
 	}
 }
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

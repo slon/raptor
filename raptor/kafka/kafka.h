@@ -7,7 +7,7 @@
 
 #include <raptor/kafka/future.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class kafka_t {
 public:
@@ -28,4 +28,4 @@ public:
 	) = 0;
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

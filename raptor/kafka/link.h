@@ -4,7 +4,7 @@
 #include <raptor/kafka/request.h>
 #include <raptor/kafka/response.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class link_t {
 public:
@@ -17,4 +17,4 @@ public:
 
 typedef std::shared_ptr<link_t> link_ptr_t;
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

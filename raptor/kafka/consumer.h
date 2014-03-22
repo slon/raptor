@@ -2,7 +2,7 @@
 
 #include <raptor/kafka/message_set.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class consumer_t {
 public:
@@ -13,4 +13,4 @@ public:
     virtual ~consumer_t() {}
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

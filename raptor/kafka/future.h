@@ -15,7 +15,7 @@
 
 #include <phantom/pd.H>
 
-namespace phantom {
+namespace raptor {
 
 template<class x_t> class future_traits_t;
 
@@ -368,4 +368,4 @@ struct future_traits_t<void> {
 	}
 };
 
-} // namespace phantom
+} // namespace raptor

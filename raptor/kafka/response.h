@@ -9,7 +9,7 @@
 #include <raptor/kafka/wire.h>
 #include <raptor/kafka/message_set.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class response_t {
 public:
@@ -125,4 +125,4 @@ public:
 
 typedef std::shared_ptr<offset_response_t> offset_response_ptr_t;
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

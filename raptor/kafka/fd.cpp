@@ -8,7 +8,7 @@
 
 #include <unistd.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 void fd_t::close() {
     if(fd_ != -1) ::close(fd_);
@@ -28,4 +28,4 @@ fd_t fd_t::dup() {
 }
 
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

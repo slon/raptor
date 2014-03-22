@@ -8,7 +8,7 @@
 
 #include <phantom/pd.H>
 
-namespace phantom {
+namespace raptor {
 
 template<class x_t>
 class channel_t {
@@ -71,4 +71,4 @@ private:
 	}
 };
 
-} // namespace phantom
+} // namespace raptor

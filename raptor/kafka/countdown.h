@@ -6,7 +6,7 @@
 
 #include <phantom/pd.H>
 
-namespace phantom {
+namespace raptor {
 
 class countdown_t {
 public:
@@ -41,4 +41,4 @@ private:
 	int count;
 };
 
-} // namespace phantom
+} // namespace raptor

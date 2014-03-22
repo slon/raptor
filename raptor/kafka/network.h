@@ -7,7 +7,7 @@
 #include <raptor/kafka/link.h>
 #include <raptor/kafka/future.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class network_t {
 public:
@@ -20,4 +20,4 @@ public:
 	virtual ~network_t() {}
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

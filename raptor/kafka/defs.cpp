@@ -1,6 +1,6 @@
 #include <raptor/kafka/defs.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 const std::string DEFAULT_CLIENT_ID = "raptor/kafka";
 
@@ -39,4 +39,4 @@ char const* kafka_err_str(kafka_err_t err) {
     }
 }
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

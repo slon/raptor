@@ -2,7 +2,7 @@
 
 #include <pd/base/time.H>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 struct options_t {
     struct kafka_t {
@@ -86,4 +86,4 @@ struct options_t {
 
 options_t default_options();
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

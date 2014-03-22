@@ -18,7 +18,7 @@
 #include <raptor/kafka/bq_producer.h>
 #include <raptor/kafka/bq_consumer.h>
 
-namespace phantom {
+namespace raptor {
 
 class io_kafka_t : public io_kafka::kafka_t, public io_t {
 public:
@@ -69,4 +69,4 @@ private:
 	);
 };
 
-} // namespace phantom
+} // namespace raptor

@@ -13,7 +13,7 @@
 #include <raptor/kafka/request.h>
 #include <raptor/kafka/response.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 void recv_all(const fd_t& fd, char* buff, size_t size) {
 	size_t bytes_read = 0;
@@ -145,4 +145,4 @@ bool bq_link_t::is_closed() {
 	return send_channel.is_closed();
 }
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

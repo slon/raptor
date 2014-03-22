@@ -10,7 +10,7 @@
 #include <raptor/kafka/metadata.h>
 #include <raptor/kafka/options.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class bq_network_t : public network_t {
 public:
@@ -39,4 +39,4 @@ private:
 	std::shared_ptr<link_t> make_link(const std::string& hostname, uint16_t port);
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

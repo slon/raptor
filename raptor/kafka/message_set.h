@@ -7,7 +7,7 @@
 #include <raptor/kafka/wire.h>
 #include <raptor/kafka/blob.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class blob_writer_t : public wire_writer_t {
 public:
@@ -104,4 +104,4 @@ private:
 	static std::shared_ptr<char> make_buffer(size_t size);
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

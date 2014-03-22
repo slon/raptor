@@ -1,6 +1,6 @@
 #include <raptor/kafka/exception.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 void throw_kafka_err(const std::string& msg,
                      kafka_err_t err,
@@ -15,4 +15,4 @@ void throw_kafka_err(const std::string& msg,
     }
 }
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

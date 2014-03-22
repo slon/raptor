@@ -6,7 +6,7 @@
 
 #include <raptor/kafka/response.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class metadata_t {
 public:
@@ -34,4 +34,4 @@ private:
     size_t next_bootstrap_broker_;
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

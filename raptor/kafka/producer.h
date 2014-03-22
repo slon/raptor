@@ -2,7 +2,7 @@
 
 #include <raptor/kafka/message_set.h>
 
-namespace phantom { namespace io_kafka {
+namespace raptor { namespace io_kafka {
 
 class producer_t {
 public:
@@ -15,4 +15,4 @@ public:
     virtual ~producer_t() {}
 };
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka

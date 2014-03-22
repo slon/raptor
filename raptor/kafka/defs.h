@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-namespace phantom {
+namespace raptor {
 
 typedef int32_t partition_id_t;
 typedef int64_t offset_t;
@@ -48,4 +48,4 @@ enum class kafka_err_t {
 //! returns c-string description of kafka error
 char const* kafka_err_str(kafka_err_t err);
 
-}} // namespace phantom::io_kafka
+}} // namespace raptor::io_kafka
