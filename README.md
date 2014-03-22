@@ -2,7 +2,8 @@
 
 ## core
 
-Code for fiber creation, synchronization(mutexes, queues, futures) and
-wrappers around system calls.
+Code for fiber creation, synchronization(mutexes, channel, future) and
+fiber friendly wrappers around system calls.
 
 ## io
+

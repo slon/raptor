@@ -276,7 +276,7 @@ auto future_t<x_t>::bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_
 
 		future_t<y_t> outer_future;
 		try {
-			outer_future = f(this_future);
+			outer_future = fn(this_future);
 			outer_future.then(forward_handler);
 		} catch(...) {
 			chained_promise.set_exception(std::current_exception());

@@ -18,6 +18,9 @@ raptor = env.Library("libraptor.a",
                      Glob("raptor/core/*.cpp") + Glob("raptor/io/*.cpp") +
                      ["raptor/core/context_supp.S"])
 
+kafka = env.Library("libraptor_kafka.a",
+                    Glob("raptor/kafka/*.cpp"))
+
 env.Program("test/run_ut",
             Glob("test/io/*.cpp") + Glob("test/core/*.cpp") + gmock_main,
             LIBS=[raptor, gmock, "pthread", "ev"])
