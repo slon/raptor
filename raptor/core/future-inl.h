@@ -4,7 +4,7 @@ namespace raptor {
 
 
 template<class x_t>
-struct future_value_trait_t {
+struct future_traits_t {
 	template<class y_t, class fn_t>
 	static void apply_and_set_value(
 		promise_t<x_t>* promise,
@@ -13,10 +13,17 @@ struct future_value_trait_t {
 	) {
 		promise->set_value((*f)(*future));
 	}
+
+	static void forward_value(
+		promise_t<x_t>* promise,
+		future_t<x_t>* future
+	) {
+		promise->set_value(future->get());
+	}
 };
 
 template<>
-struct future_value_trait_t<void> {
+struct future_traits_t<void> {
 	template<class y_t, class fn_t>
 	static void apply_and_set_value(
 		promise_t<void>* promise,
@@ -24,6 +31,13 @@ struct future_value_trait_t<void> {
 		fn_t* f
 	) {
 		(*f)(*future);
+		promise->set_value();
+	}
+
+	static void forward_value(
+		promise_t<void>* promise,
+		future_t<void>* future
+	) {
 		promise->set_value();
 	}
 };
@@ -225,7 +239,7 @@ auto future_t<x_t>::then(executor_t* executor, fn_t&& fn) -> future_t<decltype(f
 		future_t<x_t> future(state_);
 
 		try {
-			future_value_trait_t<y_t>::apply_and_set_value(&chained_promise, &future, &fn);
+			future_traits_t<y_t>::apply_and_set_value(&chained_promise, &future, &fn);
 		} catch(...) {
 			chained_promise.set_exception(std::current_exception());
 		}
@@ -233,6 +247,44 @@ auto future_t<x_t>::then(executor_t* executor, fn_t&& fn) -> future_t<decltype(f
 
 	state_->subscribe(subscriber);
 	return chained_future;
+}
+
+template<class x_t>
+template<class fn_t>
+auto future_t<x_t>::bind(fn_t&& fn) -> decltype(fn(future_t<x_t>())) const {
+	return bind(nullptr, fn);
+}
+
+template<class x_t>
+template<class fn_t>
+auto future_t<x_t>::bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_t<x_t>())) const {
+	assert(state_);
+	typedef decltype(fn(future_t<x_t>())) result_future_t;
+	typedef typename result_future_t::value_t y_t;
+
+	promise_t<y_t> chained_promise;
+	std::function<void(future_t<y_t>)> forward_handler = [chained_promise] (future_t<y_t> future) mutable {
+		if(future.has_exception()) {
+			chained_promise.set_exception(future.get_exception());
+		} else {
+			future_traits_t<y_t>::forward_value(&chained_promise, &future);
+		}
+	};
+
+	closure_t subscriber(executor, [fn, chained_promise, forward_handler, state_] () mutable {
+		future_t<x_t> this_future(state_);
+
+		future_t<y_t> outer_future;
+		try {
+			outer_future = f(this_future);
+			outer_future.then(forward_handler);
+		} catch(...) {
+			chained_promise.set_exception(std::current_exception());
+		}
+	});
+
+	state_->subscribe(subscriber);
+	return chained_promise.get_future();
 }
 
 template<class x_t>

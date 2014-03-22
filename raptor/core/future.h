@@ -10,10 +10,6 @@
 namespace raptor {
 
 template<class x_t> class promise_t;
-
-template<class x_t>
-class future_value_trait_t;
-
 template<class x_t> class shared_state_t;
 
 // read-only result of asyncronous operation or exception describing why operation failed
@@ -23,10 +19,12 @@ public:
 	// create future with empty state
 	future_t() {}
 
+	typedef x_t value_t;
+
 	// just 'const x_t&', than compiles when x_t is void
 	typedef typename std::add_lvalue_reference<typename std::add_const<x_t>::type>::type x_const_ref_t;
 
-	// block untill future is ready and then return value or throw exception
+	// block untill future is ready and return value or throw exception
 	x_const_ref_t get() const;
 
 	// block untill future is ready and return exception
@@ -45,38 +43,17 @@ public:
 	// wait untill future is ready or timeout occur
 	bool wait(duration_t* timeout = nullptr) const;
 
-	// asyncronously apply function to this future and return future
-	// representing the result of this call
-	//
-    // Example:
-	//
-    // json_t parse_json(future_t<http_request_t> raw_request);
-	//
-	// future_t<http_request_t> http_request = make_request("http://yandex.com");
-    // future_t<json_t> json = http_request.then(parse_json);
-	//
+	// async equivalent to make_ready_future(fn(*this))
 	template<class fn_t>
 	auto then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
-
-	// asyncronously apply function than also returns future
-	// f.then_get(g) is almost the same as f.then(g).get()
-	//
-	// Example:
-	//
-	// future_t<netaddr_t> getaddrinfo(std::string host, int port);
-	// future_t<socket_t> connect(future_t<netaddr_t> addr);
-	//
-	// future_t<socket_t> socket = getaddrinfo("yandex.ru", 80).then(connect);
-	template<class fn_t>
-	auto then_get(fn_t&& fn) -> decltype(fn(future_t<x_t>())) const;
-
-	// same as above, additionally specifying executor that will run the chained function
 	template<class fn_t>
 	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
 
+	// async equivalent to this->then(fn).get()
 	template<class fn_t>
-	auto then_get(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
-
+	auto bind(fn_t&& fn) -> decltype(fn(future_t<x_t>())) const;
+	template<class fn_t>
+	auto bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_t<x_t>())) const;
 
 	friend class promise_t<x_t>;
 
