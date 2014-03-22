@@ -152,7 +152,9 @@ scheduler_impl_t::wait_result_t scheduler_impl_t::wait_io(int fd, int events, du
 		ev_timer_stop(ev_loop_, &timer_timeout);
 	}
 
-	if(watcher_data.events & EV_TIMER) {
+	if(watcher_data.events & EV_ERROR) {
+		return ERROR;
+	} else if(watcher_data.events & EV_TIMER) {
 		return TIMEDOUT;
 	} else {
 		return READY;

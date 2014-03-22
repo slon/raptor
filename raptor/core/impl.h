@@ -66,7 +66,7 @@ public:
 
 	// [context:fiber] [thread:ev]
 	enum wait_result_t {
-		READY, TIMEDOUT
+		READY, TIMEDOUT, ERROR
 	};
  
 	wait_result_t wait_io(int fd, int events, duration_t* timeout);

@@ -118,6 +118,27 @@ TEST(scheduler_impl_t, wait_io_timeout) {
 	close(fd[0]); close(fd[1]);
 }
 
+TEST(scheduler_impl_t, wait_invalid_fd) {
+	scheduler_impl_t scheduler;
+
+	int wait_res = -1;
+	int t_errno = 0;
+	std::function<void()> task = [&wait_res, &t_errno] () {
+		wait_res = SCHEDULER_IMPL->wait_io(1000, EV_READ, nullptr);
+		t_errno = errno;
+	};
+	fiber_impl_t fiber(&task);
+
+	scheduler.activate(&fiber);
+	scheduler.run(EVRUN_NOWAIT);
+	scheduler.run(EVRUN_NOWAIT);
+
+	EXPECT_TRUE(fiber.is_terminated());
+
+	EXPECT_EQ(EBADF, t_errno) << strerror(t_errno);
+	EXPECT_EQ(scheduler_impl_t::ERROR, wait_res);
+}
+
 TEST(scheduler_impl_t, wait_timeout) {
 	scheduler_impl_t scheduler;
 
