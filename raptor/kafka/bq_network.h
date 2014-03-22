@@ -6,9 +6,9 @@
 #include <phantom/pd.H>
 #include <phantom/scheduler.H>
 
-#include <phantom/io_kafka/network.h>
-#include <phantom/io_kafka/metadata.h>
-#include <phantom/io_kafka/options.h>
+#include <raptor/kafka/network.h>
+#include <raptor/kafka/metadata.h>
+#include <raptor/kafka/options.h>
 
 namespace phantom { namespace io_kafka {
 

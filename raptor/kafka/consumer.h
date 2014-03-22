@@ -1,6 +1,6 @@
 #pragma once
 
-#include <phantom/io_kafka/message_set.h>
+#include <raptor/kafka/message_set.h>
 
 namespace phantom { namespace io_kafka {
 

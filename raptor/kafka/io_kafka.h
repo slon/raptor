@@ -9,14 +9,14 @@
 
 #include <phantom/io.H>
 
-#include <phantom/io_kafka/kafka.h>
-#include <phantom/io_kafka/metadata.h>
-#include <phantom/io_kafka/response.h>
-#include <phantom/io_kafka/request.h>
-#include <phantom/io_kafka/options.h>
-#include <phantom/io_kafka/network.h>
-#include <phantom/io_kafka/bq_producer.h>
-#include <phantom/io_kafka/bq_consumer.h>
+#include <raptor/kafka/kafka.h>
+#include <raptor/kafka/metadata.h>
+#include <raptor/kafka/response.h>
+#include <raptor/kafka/request.h>
+#include <raptor/kafka/options.h>
+#include <raptor/kafka/network.h>
+#include <raptor/kafka/bq_producer.h>
+#include <raptor/kafka/bq_consumer.h>
 
 namespace phantom {
 

@@ -5,9 +5,9 @@
 #include <memory>
 #include <cstdint>
 
-#include <phantom/io_kafka/defs.h>
-#include <phantom/io_kafka/wire.h>
-#include <phantom/io_kafka/message_set.h>
+#include <raptor/kafka/defs.h>
+#include <raptor/kafka/wire.h>
+#include <raptor/kafka/message_set.h>
 
 namespace phantom { namespace io_kafka {
 

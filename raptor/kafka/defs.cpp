@@ -1,8 +1,8 @@
-#include <phantom/io_kafka/defs.h>
+#include <raptor/kafka/defs.h>
 
 namespace phantom { namespace io_kafka {
 
-const std::string DEFAULT_CLIENT_ID = "phantom/io_kafka";
+const std::string DEFAULT_CLIENT_ID = "raptor/kafka";
 
 char const* kafka_err_str(kafka_err_t err) {
     switch(err) {

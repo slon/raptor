@@ -1,10 +1,10 @@
-#include <phantom/io_kafka/metadata.h>
+#include <raptor/kafka/metadata.h>
 
 #include <pd/base/log.H>
 
 #include <phantom/pd.H>
 
-#include <phantom/io_kafka/exception.h>
+#include <raptor/kafka/exception.h>
 
 namespace phantom { namespace io_kafka {
 

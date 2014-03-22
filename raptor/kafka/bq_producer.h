@@ -5,10 +5,10 @@
 
 #include <pd/bq/bq_cond.H>
 
-#include <phantom/io_kafka/defs.h>
-#include <phantom/io_kafka/producer.h>
-#include <phantom/io_kafka/options.h>
-#include <phantom/io_kafka/hooks.h>
+#include <raptor/kafka/defs.h>
+#include <raptor/kafka/producer.h>
+#include <raptor/kafka/options.h>
+#include <raptor/kafka/hooks.h>
 
 namespace phantom { namespace io_kafka {
 

@@ -3,9 +3,9 @@
 #include <memory>
 #include <string>
 
-#include <phantom/io_kafka/defs.h>
-#include <phantom/io_kafka/link.h>
-#include <phantom/io_kafka/future.h>
+#include <raptor/kafka/defs.h>
+#include <raptor/kafka/link.h>
+#include <raptor/kafka/future.h>
 
 namespace phantom { namespace io_kafka {
 

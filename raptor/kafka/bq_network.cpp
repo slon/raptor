@@ -1,4 +1,4 @@
-#include <phantom/io_kafka/bq_network.h>
+#include <raptor/kafka/bq_network.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -11,9 +11,9 @@
 #include <pd/bq/bq_util.H>
 #include <pd/bq/bq_job.H>
 
-#include <phantom/io_kafka/bq_link.h>
-#include <phantom/io_kafka/request.h>
-#include <phantom/io_kafka/response.h>
+#include <raptor/kafka/bq_link.h>
+#include <raptor/kafka/request.h>
+#include <raptor/kafka/response.h>
 
 namespace phantom { namespace io_kafka {
 

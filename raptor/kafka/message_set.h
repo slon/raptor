@@ -3,9 +3,9 @@
 #include <vector>
 #include <memory>
 
-#include <phantom/io_kafka/defs.h>
-#include <phantom/io_kafka/wire.h>
-#include <phantom/io_kafka/blob.h>
+#include <raptor/kafka/defs.h>
+#include <raptor/kafka/wire.h>
+#include <raptor/kafka/blob.h>
 
 namespace phantom { namespace io_kafka {
 

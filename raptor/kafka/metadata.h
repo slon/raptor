@@ -4,7 +4,7 @@
 #include <map>
 #include <set>
 
-#include <phantom/io_kafka/response.h>
+#include <raptor/kafka/response.h>
 
 namespace phantom { namespace io_kafka {
 

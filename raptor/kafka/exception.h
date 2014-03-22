@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include <phantom/io_kafka/defs.h>
+#include <raptor/kafka/defs.h>
 
 namespace phantom { namespace io_kafka {
 

@@ -5,9 +5,9 @@
 
 #include <pd/bq/bq_cond.H>
 
-#include <phantom/io_kafka/consumer.h>
-#include <phantom/io_kafka/options.h>
-#include <phantom/io_kafka/hooks.h>
+#include <raptor/kafka/consumer.h>
+#include <raptor/kafka/options.h>
+#include <raptor/kafka/hooks.h>
 
 namespace phantom { namespace io_kafka {
 

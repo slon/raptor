@@ -1,8 +1,8 @@
 #pragma once
 
-#include <phantom/io_kafka/future.h>
-#include <phantom/io_kafka/request.h>
-#include <phantom/io_kafka/response.h>
+#include <raptor/kafka/future.h>
+#include <raptor/kafka/request.h>
+#include <raptor/kafka/response.h>
 
 namespace phantom { namespace io_kafka {
 

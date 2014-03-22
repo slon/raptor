@@ -1,4 +1,4 @@
-#include <phantom/io_kafka/wire.h>
+#include <raptor/kafka/wire.h>
 
 #include <endian.h>
 #include <unistd.h>
@@ -12,7 +12,7 @@
 
 #include <pd/bq/bq_util.H>
 
-#include <phantom/io_kafka/exception.h>
+#include <raptor/kafka/exception.h>
 
 namespace phantom { namespace io_kafka {
 

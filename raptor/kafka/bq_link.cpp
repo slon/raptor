@@ -1,4 +1,4 @@
-#include <phantom/io_kafka/bq_link.h>
+#include <raptor/kafka/bq_link.h>
 
 #include <string.h>
 
@@ -9,9 +9,9 @@
 #include <phantom/pd.H>
 #include <phantom/scheduler.H>
 
-#include <phantom/io_kafka/options.h>
-#include <phantom/io_kafka/request.h>
-#include <phantom/io_kafka/response.h>
+#include <raptor/kafka/options.h>
+#include <raptor/kafka/request.h>
+#include <raptor/kafka/response.h>
 
 namespace phantom { namespace io_kafka {
 

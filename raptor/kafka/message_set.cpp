@@ -1,11 +1,11 @@
-#include <phantom/io_kafka/message_set.h>
+#include <raptor/kafka/message_set.h>
 
 #include <cassert>
 #include <iostream>
 
 #include <boost/crc.hpp>
 
-#include <phantom/io_kafka/exception.h>
+#include <raptor/kafka/exception.h>
 
 namespace phantom { namespace io_kafka {
 

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <phantom/io_kafka/exception.h>
+#include <raptor/kafka/exception.h>
 
 namespace phantom { namespace io_kafka {
 

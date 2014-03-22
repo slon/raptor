@@ -9,7 +9,7 @@
 #include <pd/bq/bq_mutex.H>
 
 #include <phantom/pd.H>
-#include <phantom/io_kafka/kafka.h>
+#include <raptor/kafka/kafka.h>
 
 namespace phantom { namespace io_kafka {
 

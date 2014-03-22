@@ -3,8 +3,8 @@
 #include <string>
 #include <cstdint>
 
-#include <phantom/io_kafka/exception.h>
-#include <phantom/io_kafka/blob.h>
+#include <raptor/kafka/exception.h>
+#include <raptor/kafka/blob.h>
 
 namespace phantom { namespace io_kafka {
 

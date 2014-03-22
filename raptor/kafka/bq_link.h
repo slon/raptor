@@ -1,20 +1,11 @@
 #pragma once
 
-#include <queue>
-#include <atomic>
-#include <utility>
+#include <raptor/core/future.h>
+#include <raptor/core/channel.h>
 
-#include <pd/bq/bq_mutex.H>
-
-#include <phantom/pd.H>
-
-#include <phantom/io_kafka/future.h>
-#include <phantom/io_kafka/channel.h>
-#include <phantom/io_kafka/countdown.h>
-
-#include <phantom/io_kafka/fd.h>
-#include <phantom/io_kafka/wire.h>
-#include <phantom/io_kafka/link.h>
+#include <raptor/kafka/fd.h>
+#include <raptor/kafka/wire.h>
+#include <raptor/kafka/link.h>
 
 namespace phantom {
 
