@@ -1,4 +1,4 @@
-#include <raptor/kafka/bq_network.h>
+#include <raptor/kafka/rt_network.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -6,16 +6,13 @@
 #include <netdb.h>
 #include <string.h>
 
-#include <pd/base/log.H>
-#include <pd/base/exception.H>
-#include <pd/bq/bq_util.H>
-#include <pd/bq/bq_job.H>
+#include <raptor/core/syscall.h>
 
-#include <raptor/kafka/bq_link.h>
+#include <raptor/kafka/rt_link.h>
 #include <raptor/kafka/request.h>
 #include <raptor/kafka/response.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 fd_t connect(const std::string& host, uint16_t port) {
 	std::string port_str = std::to_string(port);
@@ -34,7 +31,7 @@ fd_t connect(const std::string& host, uint16_t port) {
 
 	int res;
 	if((res = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &results)) != 0) {
-		throw sys_exception_t("getaddrinfo(): ", gai_strerror(res));
+		throw std::system_error(errno, std::system_category(), "getaddrinfo");
 	}
 
 	int last_errno = 0;
@@ -59,38 +56,37 @@ fd_t connect(const std::string& host, uint16_t port) {
 	freeaddrinfo(results);
 
 	if(sock == -1) {
-		throw sys_exception_t("phantom::io_kafka::connect(): %s", strerror(last_errno));
+		throw std::system_error(last_errno, std::system_category(), "connect");
 	} else {
-		if(pd::bq_fd_setup(sock) < 0)
-			throw sys_exception_t("bq_fd_setup(): ", strerror(errno));
+		if(rt_ctl_nonblock(sock) < 0)
+			throw std::system_error(last_errno, std::system_category(), "rt_ctl_nonblock");
 
 		return fd_t(sock);
 	}
 }
 
-std::shared_ptr<link_t> bq_network_t::make_link(const std::string& hostname, uint16_t port) {
+std::shared_ptr<link_t> rt_network_t::make_link(const std::string& hostname, uint16_t port) {
 	fd_t conn = connect(hostname, port);
-	auto link = std::make_shared<bq_link_t>(std::move(conn), options);
+	auto link = std::make_shared<rt_link_t>(std::move(conn), options);
 	link->start(scheduler);
 
 	return link;
 }
 
 
-bq_network_t::bq_network_t(scheduler_t* scheduler, const options_t& options) :
+rt_network_t::rt_network_t(scheduler_t scheduler, const options_t& options) :
 	scheduler(scheduler),
 	is_refreshing(false),
 	options(options) {}
 
-void bq_network_t::do_refresh_metadata() {
-
-	interval_t backoff = options.lib.metadata_refresh_backoff;
-	bq_sleep(&backoff);
+void rt_network_t::do_refresh_metadata() {
+	duration_t backoff = options.lib.metadata_refresh_backoff;
+	rt_sleep(&backoff);
 
 	try {
-		bq_mutex_guard_t guard(mutex);
+		std::unique_lock<mutex_t> guard(mutex);
 		metadata_t::addr_t broker_addr = metadata.get_next_broker();
-		guard.relax();
+		guard.unlock();
 
 		metadata_request_ptr_t request = std::make_shared<metadata_request_t>();
 		metadata_response_ptr_t response = std::make_shared<metadata_response_t>();
@@ -98,32 +94,32 @@ void bq_network_t::do_refresh_metadata() {
 		std::shared_ptr<link_t> meta_link = make_link(broker_addr.hostname, broker_addr.port);
 		meta_link->send(request, response).get();
 
-		guard.wakeup();
+		guard.lock();
 		metadata.update(*response);
 	} catch(std::exception& err) {
-		log_error("do_refresh_metadata(): %s", err.what());
+		// TODO log
 	}
 
-	bq_mutex_guard_t guard(mutex);
+	std::unique_lock<mutex_t> guard(mutex);
 	is_refreshing = false;
 }
 
-void bq_network_t::add_broker(const std::string& host, uint16_t port) {
-	bq_mutex_guard_t guard(mutex);
+void rt_network_t::add_broker(const std::string& host, uint16_t port) {
+	std::unique_lock<mutex_t> guard(mutex);
 	metadata.add_broker(host, port);
 }
 
-void bq_network_t::refresh_metadata() {
-	bq_mutex_guard_t guard(mutex);
+void rt_network_t::refresh_metadata() {
+	std::unique_lock<mutex_t> guard(mutex);
 	if(is_refreshing) return;
 	is_refreshing = true;
-	guard.relax();
+	guard.unlock();
 
-	bq_job(&bq_network_t::do_refresh_metadata)(*this)->run(scheduler->bq_thr());
+	scheduler.start([this] () { do_refresh_metadata(); });
 }
 
-future_t<link_ptr_t> bq_network_t::get_link(const std::string& topic, partition_id_t partition) {
-	bq_mutex_guard_t guard(mutex);
+future_t<link_ptr_t> rt_network_t::get_link(const std::string& topic, partition_id_t partition) {
+	std::unique_lock<mutex_t> guard(mutex);
 
 	try {
 		int32_t broker_id = metadata.get_partition_leader(topic, partition);
@@ -143,4 +139,4 @@ future_t<link_ptr_t> bq_network_t::get_link(const std::string& topic, partition_
 	}
 }
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

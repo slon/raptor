@@ -10,7 +10,7 @@ namespace raptor {
 
 void rt_sleep(duration_t* timeout);
 
-int rt_ctl_noblock(int fd);
+int rt_ctl_nonblock(int fd);
 
 ssize_t rt_read(int fd, void *buf, size_t len, duration_t* timeout);
 ssize_t rt_readv(int fd, struct iovec const *vec, int count, duration_t *timeout);

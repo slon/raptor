@@ -5,10 +5,10 @@
 
 namespace raptor {
 
+namespace kafka {
+
 typedef int32_t partition_id_t;
 typedef int64_t offset_t;
-
-namespace io_kafka {
 
 static const int API_VERSION = 0;
 
@@ -48,4 +48,4 @@ enum class kafka_err_t {
 //! returns c-string description of kafka error
 char const* kafka_err_str(kafka_err_t err);
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

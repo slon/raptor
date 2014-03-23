@@ -1,8 +1,8 @@
 #pragma once
 
-#include <pd/base/time.H>
+#include <raptor/core/time.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 struct options_t {
     struct kafka_t {
@@ -67,23 +67,18 @@ struct options_t {
     } kafka;
 
     struct library_t {
-        pd::interval_t socket_timeout;
+        duration_t socket_timeout;
         int so_rcvbuf;
         int so_sndbuf;
 
-        pd::interval_t metadata_refresh_backoff;
-
-        size_t consumer_queue_size;
-        pd::interval_t consumer_timeout;
-
-        size_t producer_queue_size;
+        duration_t metadata_refresh_backoff;
 
         int obuf_size;
 
-		pd::interval_t link_timeout;
+		duration_t link_timeout;
     } lib;
 };
 
 options_t default_options();
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

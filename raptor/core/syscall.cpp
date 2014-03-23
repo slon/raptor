@@ -10,7 +10,7 @@ void rt_sleep(duration_t* timeout) {
 	SCHEDULER_IMPL->wait_timeout(timeout);
 }
 
-int rt_ctl_noblock(int fd) {
+int rt_ctl_nonblock(int fd) {
 	int i = 1;
 	return ioctl(fd, FIONBIO, &i);
 }

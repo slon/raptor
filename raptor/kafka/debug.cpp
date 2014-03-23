@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 std::string maybe_err_str(kafka_err_t err) {
     if(err != kafka_err_t::NO_ERROR) {

@@ -1,20 +1,17 @@
 #pragma once
 
-#include <pd/bq/bq_cond.H>
-#include <pd/bq/bq_mutex.H>
-
-#include <phantom/pd.H>
-#include <phantom/scheduler.H>
+#include <raptor/core/mutex.h>
+#include <raptor/core/scheduler.h>
 
 #include <raptor/kafka/network.h>
 #include <raptor/kafka/metadata.h>
 #include <raptor/kafka/options.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
-class bq_network_t : public network_t {
+class rt_network_t : public network_t {
 public:
-	bq_network_t(scheduler_t* scheduler, const options_t& options);
+	rt_network_t(scheduler_t scheduler, const options_t& options);
 
 	virtual void add_broker(const std::string& host, uint16_t port);
 
@@ -23,9 +20,9 @@ public:
 	virtual future_t<link_ptr_t> get_link(const std::string& topic, partition_id_t partition);
 
 private:
-	scheduler_t* scheduler;
+	scheduler_t scheduler;
 
-	bq_mutex_t mutex;
+	mutex_t mutex;
 	bool is_refreshing;
 
 	options_t options;
@@ -39,4 +36,4 @@ private:
 	std::shared_ptr<link_t> make_link(const std::string& hostname, uint16_t port);
 };
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

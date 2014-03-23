@@ -2,14 +2,14 @@
 
 #include <string>
 
+#include <raptor/core/future.h>
+
 #include <raptor/kafka/defs.h>
 #include <raptor/kafka/message_set.h>
 
-#include <raptor/kafka/future.h>
+namespace raptor { namespace kafka {
 
-namespace raptor { namespace io_kafka {
-
-class kafka_t {
+class kafka_client_t {
 public:
 	virtual future_t<offset_t> get_log_end_offset(
 		const std::string& topic, partition_id_t partition
@@ -28,4 +28,4 @@ public:
 	) = 0;
 };
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

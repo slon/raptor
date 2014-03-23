@@ -7,7 +7,7 @@
 
 #include <raptor/kafka/exception.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 static const int32_t MAX_MESSAGE_SET_SIZE = 16 * 1024 * 1024; // 16Mb
 static const int32_t MAX_MESSAGE_SIZE = 64 * 1024; // 64Kb
@@ -224,4 +224,4 @@ bool message_set_builder_t::empty() const {
 	return writer_.pos() == 0;
 }
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

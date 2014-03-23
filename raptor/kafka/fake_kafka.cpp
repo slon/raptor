@@ -4,14 +4,11 @@
 #include <vector>
 #include <map>
 
-#include <pd/base/config.H>
-#include <pd/base/log.H>
-#include <pd/bq/bq_mutex.H>
+#include <raptor/core/mutex.h>
 
-#include <phantom/pd.H>
-#include <raptor/kafka/kafka.h>
+#include <raptor/kafka/kafka_client.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 class fake_log_t {
 public:
@@ -62,42 +59,33 @@ private:
 	std::deque<std::string> log_;
 };
 
-class fake_kafka_t : public kafka_t {
+class fake_kafka_t : public kafka_client_t {
 public:
-	struct config_t {
-		config_t() : max_log_size(16 * 1024) {}
-
-		size_t max_log_size;
-
-		void check(const in_t::ptr_t&) const {}
-	};
-
-	fake_kafka_t(const string_t&, const config_t& config)
-		: max_log_size_(config.max_log_size) {}
+	fake_kafka_t(int max_log_size) : max_log_size_(max_log_size) {}
 
 	virtual future_t<offset_t> get_log_end_offset(const std::string& topic, partition_id_t partition) {
-		bq_mutex_guard_t guard(mutex_);
+		std::unique_lock<mutex_t> guard(mutex_);
 		return make_ready_future(get_log(topic, partition)->end_offset());
 	}
 
 	virtual future_t<offset_t> get_log_start_offset(const std::string& topic, partition_id_t partition) {
-		bq_mutex_guard_t guard(mutex_);
+		std::unique_lock<mutex_t> guard(mutex_);
 		return make_ready_future(get_log(topic, partition)->start_offset());
 	}
 
 	virtual future_t<message_set_t> fetch(const std::string& topic, partition_id_t partition, offset_t offset) {
-		bq_mutex_guard_t guard(mutex_);
+		std::unique_lock<mutex_t> guard(mutex_);
 		return make_ready_future(get_log(topic, partition)->fetch(offset));
 	}
 
 	virtual future_t<void> produce(const std::string& topic, partition_id_t partition, message_set_t msg_set) {
-		bq_mutex_guard_t guard(mutex_);
+		std::unique_lock<mutex_t> guard(mutex_);
 		get_log(topic, partition)->produce(msg_set);
 		return make_ready_future();
 	}
 
 private:
-	bq_mutex_t mutex_;
+	mutex_t mutex_;
 
 	size_t max_log_size_;
 	std::map<std::pair<std::string, partition_id_t>, fake_log_t> logs_;
@@ -113,12 +101,4 @@ private:
 	}
 };
 
-namespace fake_kafka {
-config_binding_sname(fake_kafka_t);
-config_binding_cast(fake_kafka_t, kafka_t);
-config_binding_ctor(kafka_t, fake_kafka_t);
-
-config_binding_value(fake_kafka_t, max_log_size);
-} // namespace fake_kafka
-
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

@@ -12,7 +12,9 @@ struct fiber_state_t;
 
 class fiber_t {
 public:
-	typedef std::shared_ptr<fiber_t> ptr;
+	fiber_t();
+
+	bool is_valid() { return state_ != nullptr; }
 
 	void join();
 

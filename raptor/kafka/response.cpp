@@ -2,7 +2,7 @@
 
 #include <raptor/kafka/exception.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 static const int32_t MAX_REPLICAS = 128;
 static const int32_t MAX_PARTITIONS = 4096;
@@ -126,4 +126,4 @@ void offset_response_t::read_body(wire_reader_t* reader) {
     }
 }
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

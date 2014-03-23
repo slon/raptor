@@ -14,8 +14,8 @@ public:
 	scheduler_t();
 
 	template<class fn_t, class... args_t>
-	fiber_t start(fn_t& fn, args_t&... args) {
-		std::function<void()> task(std::forward<fn_t>(fn), std::forward<args_t>(args)...);
+	fiber_t start(fn_t&& fn, args_t&&... args) {
+		std::function<void()> task(std::bind(std::forward<fn_t>(fn), std::forward<args_t>(args)...));
 		return start(std::move(task));
 	}
 

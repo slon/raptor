@@ -9,12 +9,13 @@
 #include <cstring>
 #include <limits>
 #include <iostream>
+#include <system_error>
 
-#include <pd/bq/bq_util.H>
+#include <raptor/core/syscall.h>
 
 #include <raptor/kafka/exception.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 static const size_t MAX_STRING_SIZE = 1024;
 
@@ -136,9 +137,9 @@ void bq_wire_writer_t::flush() {
         iovec_count = 2;
     }
 
-    ssize_t res = pd::bq_writev(fd_, iov, iovec_count, NULL);
+    ssize_t res = rt_writev(fd_, iov, iovec_count, NULL);
     if(res < 0) {
-        throw sys_exception_t("bq_writev() ", strerror(errno));
+        throw std::system_error(errno, std::system_category(), "rt_writev()");
     }
 
     if(res > 0) {
@@ -251,4 +252,4 @@ void wire_reader_t::jump(size_t pos) {
     pos_ = pos;
 }
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

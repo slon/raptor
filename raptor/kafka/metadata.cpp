@@ -1,37 +1,25 @@
 #include <raptor/kafka/metadata.h>
 
-#include <pd/base/log.H>
-
-#include <phantom/pd.H>
-
 #include <raptor/kafka/exception.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 void metadata_t::update(const metadata_response_t& response) {
 	brokers_.clear();
 	topics_.clear();
 
 	for(const auto& broker : response.brokers()) {
-		log_error("metadata_t::update(): host: %.*s port: %d", (int)broker.host.size(), broker.host.data(), broker.port);
 		brokers_[broker.node_id] = { broker.host, static_cast<uint16_t>(broker.port) };
 	}
 
 	for(const auto& topic : response.topics()) {
-		log_error("metadata_t::update(): topic: %.*s n_partitions: %ld", (int)topic.name.size(), topic.name.data(), topic.partitions.size());
-
 		if(topic.topic_err != kafka_err_t::NO_ERROR) {
-			log_error("metadata_t::update(): error '%s' in topic '%s'",
-					  kafka_err_str(topic.topic_err),
-					  topic.name.c_str());
+			// TODO log
 		}
 
 		for(const auto& partition : topic.partitions) {
 			if(partition.partition_err != kafka_err_t::NO_ERROR) {
-				log_error("metadata_t::update(): error '%s' in topic '%s', partition %d",
-						  kafka_err_str(partition.partition_err),
-						  topic.name.c_str(),
-						  partition.partition_id);
+				// TODO log
 			}
 
 			topics_[topic.name][partition.partition_id] = partition.leader;
@@ -82,4 +70,4 @@ void metadata_t::add_broker(const std::string& host, uint16_t port) {
 	bootstrap_brokers_.push_back({ host, port });
 }
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

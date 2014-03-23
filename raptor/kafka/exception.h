@@ -4,7 +4,7 @@
 
 #include <raptor/kafka/defs.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 class exception_t : public std::runtime_error {
 public:
@@ -70,17 +70,9 @@ public:
         ) {}
 };
 
-class sys_exception_t : public exception_t {
-public:
-    sys_exception_t(char const* where, char const* err_msg)
-        : exception_t(std::string(where) + err_msg) {}
-
-    ~sys_exception_t() noexcept {}
-};
-
 void throw_kafka_err(const std::string& msg,
                      kafka_err_t err,
                      const std::string& topic = "",
-                     partition_id_t partition = -1) __attribute__((noreturn));
+                     partition_id_t partition = -1);
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

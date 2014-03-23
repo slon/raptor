@@ -1,6 +1,6 @@
 #include <raptor/kafka/request.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 int32_t wire_string_size(const std::string& str) {
 	return 2 + str.size();
@@ -108,4 +108,4 @@ void offset_request_t::write_body(wire_writer_t* writer) const {
 	writer->int32(max_number_of_offsets); // max number of offsets
 }
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 std::ostream& operator << (std::ostream& stream,
                            const metadata_response_t& metadata);
@@ -13,4 +13,4 @@ std::ostream& operator << (std::ostream& stream,
 std::ostream& operator << (std::ostream& stream,
                            const produce_response_t& produce_response);
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

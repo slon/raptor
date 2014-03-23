@@ -1,10 +1,11 @@
 #pragma once
 
-#include <raptor/kafka/future.h>
+#include <raptor/core/future.h>
+
 #include <raptor/kafka/request.h>
 #include <raptor/kafka/response.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 class link_t {
 public:
@@ -17,4 +18,4 @@ public:
 
 typedef std::shared_ptr<link_t> link_ptr_t;
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

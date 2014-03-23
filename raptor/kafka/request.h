@@ -8,7 +8,7 @@
 #include <raptor/kafka/wire.h>
 #include <raptor/kafka/message_set.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 class request_t {
 public:
@@ -133,4 +133,4 @@ public:
 
 typedef std::shared_ptr<offset_request_t> offset_request_ptr_t;
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

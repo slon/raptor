@@ -3,11 +3,12 @@
 #include <memory>
 #include <string>
 
+#include <raptor/core/future.h>
+
 #include <raptor/kafka/defs.h>
 #include <raptor/kafka/link.h>
-#include <raptor/kafka/future.h>
 
-namespace raptor { namespace io_kafka {
+namespace raptor { namespace kafka {
 
 class network_t {
 public:
@@ -20,4 +21,4 @@ public:
 	virtual ~network_t() {}
 };
 
-}} // namespace raptor::io_kafka
+}} // namespace raptor::kafka

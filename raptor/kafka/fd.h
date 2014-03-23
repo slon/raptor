@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace raptor { namespace io_kafka {
+namespace raptor {
 
 class fd_t {
 public:
@@ -40,4 +40,4 @@ private:
     int fd_;
 };
 
-}} // namespace raptor::io_kafka
+} // namespace raptor
