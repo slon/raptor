@@ -318,7 +318,7 @@ future_t<x_t> make_ready_future(const x_t& x) {
 	return promise.get_future();
 }
 
-future_t<void> make_ready_future() {
+inline future_t<void> make_ready_future() {
 	promise_t<void> promise;
 	promise.set_value();
 	return promise.get_future();

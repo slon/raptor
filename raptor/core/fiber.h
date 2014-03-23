@@ -12,7 +12,7 @@ struct fiber_state_t;
 
 class fiber_t {
 public:
-	fiber_t();
+	fiber_t() {}
 
 	bool is_valid() { return state_ != nullptr; }
 

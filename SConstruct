@@ -11,8 +11,8 @@ env.Append(CPPPATH=["."])
 env.Append(LINKFLAGS=["-g"])
 env.Append(CPPFLAGS=["-Wall", "-Werror"] + CPPFLAGS)
 
-gmock = env.Library("libgmock.a", ["test/gmock/gmock-gtest-all.cc"], CPPFLAGS=CPPFLAGS)
-gmock_main = env.Object("test/gmock/gmock_main.cc", CPPFLAGS=CPPFLAGS)
+gmock = env.Library("libgmock.a", ["contrib/gmock/gmock-gtest-all.cc"])
+gmock_main = env.Object("contrib/gmock/gmock_main.cc")
 
 raptor = env.Library("libraptor.a",
                      Glob("raptor/core/*.cpp") + Glob("raptor/io/*.cpp") +
@@ -21,6 +21,11 @@ raptor = env.Library("libraptor.a",
 kafka = env.Library("libraptor_kafka.a",
                     Glob("raptor/kafka/*.cpp"))
 
-env.Program("test/run_ut",
-            Glob("test/io/*.cpp") + Glob("test/core/*.cpp") + gmock_main,
-            LIBS=[raptor, gmock, "pthread", "ev"])
+for main_file in Glob("bin/*.cpp"):
+    env.Program(str(main_file)[:-4], main_file, LIBS=[
+            kafka, raptor, "boost_program_options", "ev", "pthread"])
+
+
+env.Program("run_ut",
+            Glob("ut/io/*.cpp") + Glob("ut/core/*.cpp") + Glob("ut/kafka/*.cpp") + gmock_main,
+            LIBS=[kafka, raptor, gmock, "pthread", "ev"])
