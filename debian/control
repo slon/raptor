@@ -11,3 +11,7 @@ Package: libraptor-dev
 Architecture: amd64
 Depends: libboost-dev, libev-dev
 Description: Fibers library
+
+Package: libraptor-kafka-dev
+Architecture: amd64
+Depends: libboost-dev, libev-dev, libraptor-dev(= ${source:Version})

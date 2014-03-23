@@ -4,12 +4,12 @@ CPPFLAGS=[
     "-std=c++0x", "-g", "-fPIC", "-O3",
     "-isystem", "raptor/fixinclude",
     "-isystem", "test/gmock",
-    "-fno-strict-aliasing",
+    "-fno-strict-aliasing"
 ]
 
 env.Append(CPPPATH=["."])
-env.Append(LINKFLAGS=["-g"])
-env.Append(CPPFLAGS=["-Wall", "-Werror"] + CPPFLAGS)
+env.Append(LINKFLAGS=["-g", "-O3"])
+env.Append(CPPFLAGS=CPPFLAGS)
 
 gmock = env.Library("libgmock.a", ["contrib/gmock/gmock-gtest-all.cc"])
 gmock_main = env.Object("contrib/gmock/gmock_main.cc")
