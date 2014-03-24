@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 	auto request = std::make_shared<kafka::metadata_request_t>();
 	auto response = std::make_shared<kafka::metadata_response_t>();
 
-	link.start(scheduler);
+	link.start(&scheduler);
 	link.send(request, response).get();
 
 	std::cout << *response;

@@ -23,7 +23,7 @@ public:
 	rt_link_t(fd_guard_t socket, const options_t& options);
 	~rt_link_t();
 
-	void start(scheduler_t scheduler);
+	void start(scheduler_t* scheduler);
 
 	virtual future_t<void> send(request_ptr_t request, response_ptr_t response);
 

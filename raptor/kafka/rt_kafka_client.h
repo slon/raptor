@@ -3,6 +3,8 @@
 #include <map>
 #include <memory>
 
+#include <raptor/core/scheduler.h>
+
 #include <raptor/kafka/kafka_client.h>
 #include <raptor/kafka/metadata.h>
 #include <raptor/kafka/response.h>
@@ -14,6 +16,10 @@ namespace raptor { namespace kafka {
 
 class rt_kafka_client_t : public kafka_client_t {
 public:
+	rt_kafka_client_t(scheduler_t* scheduler, const std::string& brokers_list);
+
+	void shutdown();
+
 	future_t<offset_t> get_log_offset(const std::string& topic, partition_id_t partition, int64_t time);
 
 	virtual future_t<offset_t> get_log_end_offset(

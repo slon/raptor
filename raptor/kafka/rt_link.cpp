@@ -56,9 +56,9 @@ rt_link_t::~rt_link_t() {
 		send_fiber.join();
 }
 
-void rt_link_t::start(scheduler_t scheduler) {
-	send_fiber = scheduler.start(&rt_link_t::send_loop, this);
-	recv_fiber = scheduler.start(&rt_link_t::recv_loop, this);
+void rt_link_t::start(scheduler_t* scheduler) {
+	send_fiber = scheduler->start(&rt_link_t::send_loop, this);
+	recv_fiber = scheduler->start(&rt_link_t::recv_loop, this);
 }
 
 future_t<void> rt_link_t::send(request_ptr_t request, response_ptr_t response) {

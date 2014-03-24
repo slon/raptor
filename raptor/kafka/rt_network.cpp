@@ -74,7 +74,7 @@ std::shared_ptr<link_t> rt_network_t::make_link(const std::string& hostname, uin
 }
 
 
-rt_network_t::rt_network_t(scheduler_t scheduler, const options_t& options) :
+rt_network_t::rt_network_t(scheduler_t* scheduler, const options_t& options) :
 	scheduler(scheduler),
 	is_refreshing(false),
 	options(options) {}
@@ -115,7 +115,7 @@ void rt_network_t::refresh_metadata() {
 	is_refreshing = true;
 	guard.unlock();
 
-	scheduler.start([this] () { do_refresh_metadata(); });
+	scheduler->start([this] () { do_refresh_metadata(); });
 }
 
 future_t<link_ptr_t> rt_network_t::get_link(const std::string& topic, partition_id_t partition) {

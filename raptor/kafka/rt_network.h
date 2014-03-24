@@ -15,7 +15,9 @@ fd_guard_t connect(const std::string& host, uint16_t port);
 
 class rt_network_t : public network_t {
 public:
-	rt_network_t(scheduler_t scheduler, const options_t& options);
+	rt_network_t(scheduler_t* scheduler, const options_t& options);
+
+	void shutdown();
 
 	virtual void add_broker(const std::string& host, uint16_t port);
 
@@ -24,7 +26,7 @@ public:
 	virtual future_t<link_ptr_t> get_link(const std::string& topic, partition_id_t partition);
 
 private:
-	scheduler_t scheduler;
+	scheduler_t* scheduler;
 
 	mutex_t mutex;
 	bool is_refreshing;
