@@ -20,6 +20,10 @@ public:
 
 	void shutdown();
 
+	virtual std::shared_ptr<producer_t> make_producer(const std::string& topic) {
+		return nullptr;
+	}
+
 	future_t<offset_t> get_log_offset(const std::string& topic, partition_id_t partition, int64_t time);
 
 	virtual future_t<offset_t> get_log_end_offset(

@@ -9,23 +9,17 @@ namespace raptor {
 struct scheduler_state_t {
 	std::thread thread;
 	scheduler_impl_t impl;
-	bool running;
-
-	void shutdown() {
-		if(running) {
-			impl.break_loop();
-			thread.join();
-			running = false;
-		}
-	}
 };
 
-scheduler_t::scheduler_t() : state_(std::make_shared<scheduler_state_t>()) {
-	state_->running = true;
-	state_->thread = std::thread([state_] () {
+scheduler_t::scheduler_t() : state_(new scheduler_state_t()) {
+	state_->thread = std::thread([this] () {
 		state_->impl.run();
 	});
 }
+
+scheduler_t::~scheduler_t() { shutdown(); }
+scheduler_t::scheduler_t(scheduler_t&& other) = default;
+scheduler_t& scheduler_t::operator = (scheduler_t&& other) = default;
 
 fiber_t scheduler_t::start(std::function<void()> closure) {
 	fiber_t fiber(std::move(closure));
@@ -38,8 +32,10 @@ void scheduler_t::switch_to() {
 }
 
 void scheduler_t::shutdown() {
-	state_->impl.break_loop();
-	state_->thread.join();
+	if(state_->thread.joinable()) {
+		state_->impl.break_loop();
+		state_->thread.join();
+	}
 }
 
 } // namespace raptor

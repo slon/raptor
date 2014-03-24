@@ -12,6 +12,9 @@ struct scheduler_state_t;
 class scheduler_t {
 public:
 	scheduler_t();
+	~scheduler_t();
+	scheduler_t(scheduler_t&& other);
+	scheduler_t& operator = (scheduler_t&& other);
 
 	template<class fn_t, class... args_t>
 	fiber_t start(fn_t&& fn, args_t&&... args) {
@@ -26,7 +29,7 @@ public:
 	void shutdown();
 
 private:
-	std::shared_ptr<scheduler_state_t> state_;
+	std::unique_ptr<scheduler_state_t> state_;
 };
 
 } // namespace raptor
