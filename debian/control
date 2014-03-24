@@ -15,3 +15,4 @@ Description: Fibers library
 Package: libraptor-kafka-dev
 Architecture: amd64
 Depends: libboost-dev, libev-dev, libraptor-dev(= ${source:Version})
+Description: Kafka 0.8 client library
