@@ -14,7 +14,7 @@
 
 namespace raptor { namespace kafka {
 
-fd_t connect(const std::string& host, uint16_t port) {
+fd_guard_t connect(const std::string& host, uint16_t port) {
 	std::string port_str = std::to_string(port);
 
 	struct addrinfo hints;
@@ -61,12 +61,12 @@ fd_t connect(const std::string& host, uint16_t port) {
 		if(rt_ctl_nonblock(sock) < 0)
 			throw std::system_error(last_errno, std::system_category(), "rt_ctl_nonblock");
 
-		return fd_t(sock);
+		return fd_guard_t(sock);
 	}
 }
 
 std::shared_ptr<link_t> rt_network_t::make_link(const std::string& hostname, uint16_t port) {
-	fd_t conn = connect(hostname, port);
+	fd_guard_t conn = connect(hostname, port);
 	auto link = std::make_shared<rt_link_t>(std::move(conn), options);
 	link->start(scheduler);
 

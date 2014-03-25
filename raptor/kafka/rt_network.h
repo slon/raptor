@@ -3,14 +3,15 @@
 #include <raptor/core/mutex.h>
 #include <raptor/core/scheduler.h>
 
+#include <raptor/io/fd_guard.h>
+
 #include <raptor/kafka/network.h>
 #include <raptor/kafka/metadata.h>
 #include <raptor/kafka/options.h>
-#include <raptor/kafka/fd.h>
 
 namespace raptor { namespace kafka {
 
-fd_t connect(const std::string& host, uint16_t port);
+fd_guard_t connect(const std::string& host, uint16_t port);
 
 class rt_network_t : public network_t {
 public:

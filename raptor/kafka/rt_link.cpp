@@ -11,10 +11,10 @@
 
 namespace raptor { namespace kafka {
 
-void recv_all(const fd_t& fd, char* buff, size_t size) {
+void recv_all(int fd, char* buff, size_t size) {
 	size_t bytes_read = 0;
 	while(bytes_read < size) {
-		ssize_t n = rt_read(fd.fd(), buff + bytes_read, size - bytes_read, NULL);
+		ssize_t n = rt_read(fd, buff + bytes_read, size - bytes_read, NULL);
 
 		if(n == 0) {
 			throw exception_t("bq_read(): connection closed");
@@ -27,7 +27,7 @@ void recv_all(const fd_t& fd, char* buff, size_t size) {
 	}
 }
 
-blob_t read_blob(const fd_t& fd) {
+blob_t read_blob(int fd) {
 	int32_t blob_size;
 
 	recv_all(fd, reinterpret_cast<char*>(&blob_size), sizeof(int32_t));
@@ -43,7 +43,7 @@ blob_t read_blob(const fd_t& fd) {
 	return blob_t(blob, blob_size);
 }
 
-rt_link_t::rt_link_t(fd_t socket, const options_t& options)
+rt_link_t::rt_link_t(fd_guard_t socket, const options_t& options)
 	: socket(std::move(socket)), options(options), send_channel(128), recv_channel(128) {}
 
 rt_link_t::~rt_link_t() {
@@ -111,7 +111,7 @@ void rt_link_t::recv_loop() {
 
 	while(recv_channel.get(&task)) {
 		try {
-			blob_t blob = read_blob(socket);
+			blob_t blob = read_blob(socket.fd());
 			wire_reader_t reader(blob);
 			task.response->read(&reader);
 			task.promise.set_value();

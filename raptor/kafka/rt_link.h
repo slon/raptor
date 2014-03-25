@@ -4,7 +4,7 @@
 #include <raptor/core/channel.h>
 #include <raptor/core/scheduler.h>
 
-#include <raptor/kafka/fd.h>
+#include <raptor/io/fd_guard.h>
 #include <raptor/kafka/wire.h>
 #include <raptor/kafka/link.h>
 
@@ -20,7 +20,7 @@ class options_t;
 
 class rt_link_t : public link_t {
 public:
-	rt_link_t(fd_t socket, const options_t& options);
+	rt_link_t(fd_guard_t socket, const options_t& options);
 	~rt_link_t();
 
 	void start(scheduler_t scheduler);
@@ -31,7 +31,7 @@ public:
 	virtual bool is_closed();
 
 private:
-	fd_t socket;
+	fd_guard_t socket;
 	const options_t& options;
 
 	struct task_t {
