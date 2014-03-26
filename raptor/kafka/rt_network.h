@@ -17,7 +17,7 @@ class rt_network_t : public network_t {
 public:
 	rt_network_t(scheduler_t* scheduler, const options_t& options);
 
-	void shutdown();
+	virtual void shutdown();
 
 	virtual void add_broker(const std::string& host, uint16_t port);
 

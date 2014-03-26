@@ -2,6 +2,7 @@
 
 #include <raptor/kafka/defs.h>
 #include <raptor/kafka/message_set.h>
+#include <raptor/core/future.h>
 
 namespace raptor { namespace kafka {
 
@@ -9,18 +10,16 @@ class kafka_client_t;
 
 class producer_t {
 public:
-	void produce(partition_id_t partition, const std::string& message) {
-		produce(partition, message_t(message));
-	}
+	producer_t(const std::string& topic, kafka_client_t* client, size_t buffer_size = 64 * 1024);
 
-	void produce(partition_id_t partition, const message_t& message) {
-		throw std::runtime_error("not implemented");
-	}
-	
-	void flush() { throw std::runtime_error("not implemented"); }
+	void produce(partition_id_t partition, const std::string& message);
+	void produce(partition_id_t partition, const message_t& message);	
+
+	void flush();
 private:	
 	std::string topic_;
 	kafka_client_t* client_;
+	size_t buffer_size_;
 
 	struct partition_t {
 		message_set_builder_t builder;

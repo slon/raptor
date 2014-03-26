@@ -79,6 +79,10 @@ rt_network_t::rt_network_t(scheduler_t* scheduler, const options_t& options) :
 	is_refreshing(false),
 	options(options) {}
 
+void rt_network_t::shutdown() {
+	active_links.clear();
+}
+
 void rt_network_t::do_refresh_metadata() {
 	duration_t backoff = options.lib.metadata_refresh_backoff;
 	rt_sleep(&backoff);

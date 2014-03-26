@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <stdexcept>
 #include <utility>
 
 #include <raptor/core/time.h>

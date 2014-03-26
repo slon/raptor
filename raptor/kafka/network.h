@@ -16,6 +16,8 @@ public:
 
 	virtual void refresh_metadata() = 0;
 
+	virtual void shutdown() = 0;
+
 	virtual future_t<link_ptr_t> get_link(const std::string& topic, partition_id_t partition) = 0;
 
 	virtual ~network_t() {}
