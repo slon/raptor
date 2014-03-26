@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+#include <string>
+#include <utility>
+
 #include <raptor/core/time.h>
 
 namespace raptor { namespace kafka {
@@ -80,5 +84,7 @@ struct options_t {
 };
 
 options_t default_options();
+
+std::vector<std::pair<std::string, uint16_t>> parse_broker_list(const std::string& brokerlist);
 
 }} // namespace raptor::kafka

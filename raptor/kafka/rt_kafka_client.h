@@ -16,9 +16,13 @@ namespace raptor { namespace kafka {
 
 class rt_kafka_client_t : public kafka_client_t {
 public:
-	rt_kafka_client_t(scheduler_t* scheduler, const std::string& brokers_list);
+	rt_kafka_client_t(scheduler_t* scheduler, const options_t& options = default_options()) {
+		throw std::runtime_error("not implemented");
+	}
 
-	void shutdown();
+	~rt_kafka_client_t() { shutdown(); }
+
+	void shutdown() { throw std::runtime_error("not implemented"); }
 
 	virtual std::shared_ptr<producer_t> make_producer(const std::string& topic) {
 		return nullptr;
@@ -41,6 +45,8 @@ public:
 	virtual future_t<void> produce(
 		const std::string& topic, partition_id_t partition, message_set_t message_set
 	);
+
+	void add_broker(const std::string& hostname, uint16_t port) {}
 
 private:
 	options_t options;

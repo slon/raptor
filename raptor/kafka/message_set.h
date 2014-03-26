@@ -26,11 +26,13 @@ protected:
 };
 
 struct message_t {
-	message_t() : offset(-1),
-				  key(NULL),
-				  key_size(0),
-				  value(NULL),
-				  value_size(0) {}
+	explicit message_t(const std::string& value) :
+		offset(-1), key(NULL), key_size(0),
+		value(value.data()), value_size(value.size()) {}
+
+	message_t() :
+		offset(-1), key(NULL), key_size(0),
+		value(NULL), value_size(0) {}
 
 	int64_t offset;
 	char const* key;
