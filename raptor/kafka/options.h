@@ -9,7 +9,13 @@
 
 namespace raptor { namespace kafka {
 
+struct options_t;
+
+void set_default_options(options_t* options);
+
 struct options_t {
+	options_t() { set_default_options(this); }
+
     struct kafka_t {
         /**
          * This field indicates how many acknowledgements the servers
@@ -83,8 +89,6 @@ struct options_t {
 		duration_t link_timeout;
     } lib;
 };
-
-options_t default_options();
 
 std::vector<std::pair<std::string, uint16_t>> parse_broker_list(const std::string& brokerlist);
 

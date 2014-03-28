@@ -3,19 +3,20 @@
 namespace raptor { namespace kafka {
 
 options_t default_options() {
-    options_t options;
+	return options_t();
+}
 
-    options.kafka.required_acks = 1;
-    options.kafka.max_wait_time = 512;
-    options.kafka.min_bytes = 64 * 1024;
-    options.kafka.produce_timeout = -1;
-    options.kafka.max_bytes = 4 * 1024 * 1024;
 
-    options.lib.obuf_size = 1024;
+void set_default_options(options_t* options) {
+    options->kafka.required_acks = 1;
+    options->kafka.max_wait_time = 50;
+    options->kafka.min_bytes = 64 * 1024;
+    options->kafka.produce_timeout = -1;
+    options->kafka.max_bytes = 4 * 1024 * 1024;
 
-    options.lib.metadata_refresh_backoff = std::chrono::seconds(1);
+    options->lib.obuf_size = 1024;
 
-    return options;
+    options->lib.metadata_refresh_backoff = std::chrono::milliseconds(150);
 }
 
 std::vector<std::string> split(const std::string& str, char by) {
@@ -24,12 +25,12 @@ std::vector<std::string> split(const std::string& str, char by) {
 	size_t last_split = 0;
 	for(size_t split_pos = 0; split_pos != str.size(); ++split_pos) {
 		if(str[split_pos] == by) {
-			splitted.push_back(str.substr(last_split, split_pos));
+			splitted.push_back(str.substr(last_split, split_pos - last_split));
 			last_split = split_pos + 1;
 		}
 	}
 
-	splitted.push_back(str.substr(last_split, str.size()));
+	splitted.push_back(str.substr(last_split, str.size() - last_split));
 
 	return splitted;
 }

@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 
 	scheduler_t scheduler;
 
-	kafka::options_t opts = kafka::default_options();
+	kafka::options_t opts;
 
 	kafka::rt_link_t link(
 		kafka::connect(options["host"].as<std::string>(), options["port"].as<int>()),

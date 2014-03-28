@@ -6,10 +6,10 @@ using namespace raptor::kafka;
 
 TEST(parse_broker_list, correct) {
 	auto blist2 = parse_broker_list("yandex.net:10");
-	auto blist3 = parse_broker_list("yandex1:234,yandex2:123");
+	auto blist3 = parse_broker_list("yandex1:234,yandex2:123,yandex3:1");
 
 	decltype(blist2) ans2 = { { "yandex.net", 10 } };
-	decltype(blist3) ans3 = { { "yandex1", 234 }, { "yandex2", 123 } };
+	decltype(blist3) ans3 = { { "yandex1", 234 }, { "yandex2", 123 }, { "yandex3", 1 } };
 
 	ASSERT_EQ(ans2, blist2);
 	ASSERT_EQ(ans3, blist3);

@@ -16,7 +16,7 @@ namespace raptor { namespace kafka {
 
 class rt_kafka_client_t : public kafka_client_t {
 public:
-	rt_kafka_client_t(scheduler_t* scheduler, const options_t& options = default_options());
+	rt_kafka_client_t(scheduler_t* scheduler, const options_t& options = options_t());
 	~rt_kafka_client_t() { shutdown(); }
 
 	void shutdown();
@@ -42,6 +42,7 @@ public:
 	);
 
 	void add_broker(const std::string& hostname, uint16_t port) { network->add_broker(hostname, port); }
+	void refresh_metadata() { network->refresh_metadata(); }
 
 private:
 	options_t options;

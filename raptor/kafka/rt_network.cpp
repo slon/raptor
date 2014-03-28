@@ -6,6 +6,8 @@
 #include <netdb.h>
 #include <string.h>
 
+#include <glog/logging.h>
+
 #include <raptor/core/syscall.h>
 
 #include <raptor/kafka/rt_link.h>
@@ -31,7 +33,7 @@ fd_guard_t connect(const std::string& host, uint16_t port) {
 
 	int res;
 	if((res = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &results)) != 0) {
-		throw std::system_error(errno, std::system_category(), "getaddrinfo");
+		throw std::system_error(errno, std::system_category(), "getaddrinfo(" + host + ":" + port_str + ")");
 	}
 
 	int last_errno = 0;
@@ -56,10 +58,10 @@ fd_guard_t connect(const std::string& host, uint16_t port) {
 	freeaddrinfo(results);
 
 	if(sock == -1) {
-		throw std::system_error(last_errno, std::system_category(), "connect");
+		throw std::system_error(last_errno, std::system_category(), "connect(" + host + ":" + port_str + ")");
 	} else {
 		if(rt_ctl_nonblock(sock) < 0)
-			throw std::system_error(last_errno, std::system_category(), "rt_ctl_nonblock");
+			throw std::system_error(last_errno, std::system_category(), "rt_ctl_nonblock(" + host + ":" + port_str + ")");
 
 		return fd_guard_t(sock);
 	}
@@ -84,6 +86,8 @@ void rt_network_t::shutdown() {
 }
 
 void rt_network_t::do_refresh_metadata() {
+	DLOG(INFO) << "refreshing metadata";
+
 	duration_t backoff = options.lib.metadata_refresh_backoff;
 	rt_sleep(&backoff);
 
@@ -101,8 +105,10 @@ void rt_network_t::do_refresh_metadata() {
 		guard.lock();
 		metadata.update(*response);
 	} catch(std::exception& err) {
-		// TODO log
+		LOG(ERROR) << err.what();
 	}
+
+	DLOG(INFO) << "refreshed";
 
 	std::unique_lock<mutex_t> guard(mutex);
 	is_refreshing = false;

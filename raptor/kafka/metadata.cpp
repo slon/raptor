@@ -1,5 +1,7 @@
 #include <raptor/kafka/metadata.h>
 
+#include <glog/logging.h>
+
 #include <raptor/kafka/exception.h>
 
 namespace raptor { namespace kafka {
@@ -14,12 +16,14 @@ void metadata_t::update(const metadata_response_t& response) {
 
 	for(const auto& topic : response.topics()) {
 		if(topic.topic_err != kafka_err_t::NO_ERROR) {
-			// TODO log
+			LOG(ERROR) << "Error in topic " << topic.name << " '" << kafka_err_str(topic.topic_err) << "'";
 		}
 
 		for(const auto& partition : topic.partitions) {
 			if(partition.partition_err != kafka_err_t::NO_ERROR) {
-				// TODO log
+				LOG(ERROR) << "Error in topic " << topic.name
+					<< " partition " << partition.partition_id
+					<< " '" << kafka_err_str(topic.topic_err) << "'";
 			}
 
 			topics_[topic.name][partition.partition_id] = partition.leader;

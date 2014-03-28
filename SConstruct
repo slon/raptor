@@ -15,7 +15,7 @@ gmock = env.Library("libgmock.a", ["contrib/gmock/gmock-gtest-all.cc"])
 gmock_main = env.Object("contrib/gmock/gmock_main.cc")
 
 raptor = env.Library("libraptor.a",
-                     Glob("raptor/core/*.cpp") + Glob("raptor/io/*.cpp") +
+                     Glob("raptor/core/*.cpp") + Glob("raptor/io/*.cpp") + Glob("raptor/daemon/*.cpp") +
                      ["raptor/core/context_supp.S"])
 
 kafka = env.Library("libraptor_kafka.a",
@@ -23,9 +23,9 @@ kafka = env.Library("libraptor_kafka.a",
 
 for main_file in Glob("bin/*.cpp"):
     env.Program(str(main_file)[:-4], main_file, LIBS=[
-            kafka, raptor, "boost_program_options", "ev", "pthread"])
+            kafka, raptor, "boost_program_options", "ev", "pthread", "glog", "gflags"])
 
 
 env.Program("run_ut",
-            Glob("ut/io/*.cpp") + Glob("ut/core/*.cpp") + Glob("ut/kafka/*.cpp") + gmock_main,
-            LIBS=[kafka, raptor, gmock, "pthread", "ev"])
+            Glob("test/ut/io/*.cpp") + Glob("test/ut/core/*.cpp") + Glob("test/ut/kafka/*.cpp") + gmock_main,
+            LIBS=[kafka, raptor, gmock, "pthread", "ev", "glog", "gflags"])
