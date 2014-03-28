@@ -1,6 +1,13 @@
 #include <raptor/kafka/rt_link.h>
 
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <netdb.h>
+#include <string.h>
+
+#include <glog/logging.h>
 
 #include <raptor/core/scheduler.h>
 #include <raptor/core/syscall.h>
@@ -10,6 +17,57 @@
 #include <raptor/kafka/response.h>
 
 namespace raptor { namespace kafka {
+
+fd_guard_t connect_socket(const std::string& host, uint16_t port) {
+	std::string port_str = std::to_string(port);
+
+	struct addrinfo hints;
+	struct addrinfo* results;
+	struct addrinfo* result;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	int res;
+	if((res = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &results)) != 0) {
+		throw std::system_error(errno, std::system_category(), "getaddrinfo(" + host + ":" + port_str + ")");
+	}
+
+	int last_errno = 0;
+
+	int sock = -1;
+	for(result = results; result != NULL; result = result->ai_next) {
+		sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+		if(sock == -1) {
+			last_errno = errno;
+			continue;
+		}
+
+		if(connect(sock, result->ai_addr, result->ai_addrlen) != -1) {
+			break;
+		}
+
+		last_errno = errno;
+		close(sock);
+		sock = -1;
+	}
+
+	freeaddrinfo(results);
+
+	if(sock == -1) {
+		throw std::system_error(last_errno, std::system_category(), "connect(" + host + ":" + port_str + ")");
+	} else {
+		if(rt_ctl_nonblock(sock) < 0)
+			throw std::system_error(last_errno, std::system_category(), "rt_ctl_nonblock(" + host + ":" + port_str + ")");
+
+		return fd_guard_t(sock);
+	}
+}
 
 void recv_all(int fd, char* buff, size_t size) {
 	size_t bytes_read = 0;

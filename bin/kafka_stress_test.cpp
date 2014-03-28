@@ -27,11 +27,7 @@ void run_client(scheduler_t* scheduler) {
 
 	options.lib.metadata_refresh_backoff = std::chrono::milliseconds(1);
 
-	rt_kafka_client_t client(scheduler, options);
-	for(auto broker : parse_broker_list(FLAGS_broker_list)) {
-		LOG(INFO) << broker.first << " " << broker.second;
-		client.add_broker(broker.first, broker.second);
-	}
+	rt_kafka_client_t client(scheduler, parse_broker_list(FLAGS_broker_list), options);
 
 	std::string message(FLAGS_msg_size, 'f');
 

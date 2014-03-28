@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include <raptor/core/mutex.h>
 #include <raptor/core/scheduler.h>
 
@@ -8,38 +10,37 @@
 #include <raptor/kafka/network.h>
 #include <raptor/kafka/metadata.h>
 #include <raptor/kafka/options.h>
+#include <raptor/kafka/link_cache.h>
 
 namespace raptor { namespace kafka {
 
-fd_guard_t connect(const std::string& host, uint16_t port);
-
 class rt_network_t : public network_t {
 public:
-	rt_network_t(scheduler_t* scheduler, const options_t& options);
+	rt_network_t(
+		scheduler_t* scheduler,
+		std::unique_ptr<link_cache_t> link_cache,
+		const options_t& options,
+		const broker_list_t& bootstrap_brokers
+	);
 
-	virtual void shutdown();
-
-	virtual void add_broker(const std::string& host, uint16_t port);
+	~rt_network_t() { shutdown(); }
+	void shutdown();
 
 	virtual void refresh_metadata();
-
 	virtual future_t<link_ptr_t> get_link(const std::string& topic, partition_id_t partition);
 
 private:
-	scheduler_t* scheduler;
+	scheduler_t* scheduler_;
+	const std::unique_ptr<link_cache_t> link_cache_;
+	const options_t options_;
 
-	mutex_t mutex;
-	bool is_refreshing;
+	spinlock_t metadata_lock_;
+	future_t<metadata_t> metadata_;
+	future_t<metadata_t> get_metadata();
 
-	options_t options;
-
-	metadata_t metadata;
-
-	std::map<host_id_t, std::shared_ptr<link_t>> active_links;
-
-	void do_refresh_metadata();
-
-	std::shared_ptr<link_t> make_link(const std::string& hostname, uint16_t port);
+	std::atomic<size_t> next_bootstrap_broker_;
+	const broker_list_t bootstrap_brokers_;
+	const broker_addr_t& get_next_bootstrap_broker();
 };
 
 }} // namespace raptor::kafka

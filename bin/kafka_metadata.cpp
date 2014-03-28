@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
 	kafka::options_t opts;
 
 	kafka::rt_link_t link(
-		kafka::connect(options["host"].as<std::string>(), options["port"].as<int>()),
+		kafka::connect_socket(options["host"].as<std::string>(), options["port"].as<int>()),
 		opts
 	);
 

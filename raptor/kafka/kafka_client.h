@@ -12,8 +12,6 @@ namespace raptor { namespace kafka {
 
 class kafka_client_t {
 public:
-	virtual std::shared_ptr<producer_t> make_producer(const std::string& topic) = 0;
-
 	virtual future_t<offset_t> get_log_end_offset(
 		const std::string& topic, partition_id_t partition
 	) = 0;

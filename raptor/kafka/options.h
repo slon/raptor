@@ -90,6 +90,9 @@ struct options_t {
     } lib;
 };
 
-std::vector<std::pair<std::string, uint16_t>> parse_broker_list(const std::string& brokerlist);
+typedef std::pair<std::string, uint16_t> broker_addr_t;
+typedef std::vector<broker_addr_t> broker_list_t;
+
+broker_list_t parse_broker_list(const std::string& brokerlist);
 
 }} // namespace raptor::kafka

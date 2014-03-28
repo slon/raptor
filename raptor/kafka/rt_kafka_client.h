@@ -16,12 +16,7 @@ namespace raptor { namespace kafka {
 
 class rt_kafka_client_t : public kafka_client_t {
 public:
-	rt_kafka_client_t(scheduler_t* scheduler, const options_t& options = options_t());
-	~rt_kafka_client_t() { shutdown(); }
-
-	void shutdown();
-
-	virtual std::shared_ptr<producer_t> make_producer(const std::string& topic);
+	rt_kafka_client_t(scheduler_t* scheduler, const broker_list_t& broker_list, const options_t& options = options_t());
 
 	future_t<offset_t> get_log_offset(const std::string& topic, partition_id_t partition, int64_t time);
 
@@ -40,9 +35,6 @@ public:
 	virtual future_t<void> produce(
 		const std::string& topic, partition_id_t partition, message_set_t message_set
 	);
-
-	void add_broker(const std::string& hostname, uint16_t port) { network->add_broker(hostname, port); }
-	void refresh_metadata() { network->refresh_metadata(); }
 
 private:
 	options_t options;

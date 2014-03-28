@@ -7,16 +7,10 @@
 
 namespace raptor { namespace kafka {
 
-std::shared_ptr<producer_t> rt_kafka_client_t::make_producer(const std::string& topic) {
-	return std::make_shared<producer_t>(topic, this);
-}
-
-void rt_kafka_client_t::shutdown() {
-	network->shutdown();
-}
-
-rt_kafka_client_t::rt_kafka_client_t(scheduler_t* scheduler, const options_t& options) :
-		options(options), network(new rt_network_t(scheduler, options)) {}
+rt_kafka_client_t::rt_kafka_client_t(scheduler_t* scheduler, const broker_list_t& broker_list, const options_t& options) :
+	options(options), network(
+		new rt_network_t(scheduler, std::unique_ptr<link_cache_t>(new rt_link_cache_t(scheduler, options)), options, broker_list)
+	) {}
 
 future_t<offset_t> rt_kafka_client_t::get_log_offset(
 		const std::string& topic, partition_id_t partition, int64_t time
