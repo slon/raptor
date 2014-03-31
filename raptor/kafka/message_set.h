@@ -26,9 +26,9 @@ protected:
 };
 
 struct message_t {
-	explicit message_t(const std::string& value) :
+	explicit message_t(const std::string& _value) :
 		offset(-1), key(NULL), key_size(0),
-		value(value.data()), value_size(value.size()) {}
+		value(_value.data()), value_size(_value.size()) {}
 
 	message_t() :
 		offset(-1), key(NULL), key_size(0),

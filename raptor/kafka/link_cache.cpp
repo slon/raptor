@@ -20,7 +20,7 @@ future_t<link_ptr_t> rt_link_cache_t::connect(const broker_addr_t& addr) {
 
 		return link;
 	} catch(const std::exception& e) {
-		return make_exception_future<link_ptr_t>(e);
+		return make_exception_future<link_ptr_t>(std::current_exception());
 	}
 }
 

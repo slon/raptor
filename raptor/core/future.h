@@ -19,8 +19,6 @@ future_t<x_t> make_ready_future(const x_t& x);
 future_t<void> make_ready_future();
 
 // make future from exception
-template<class x_t, class exception_t>
-future_t<x_t> make_exception_future(const exception_t& err);
 template<class x_t>
 future_t<x_t> make_exception_future(std::exception_ptr err);
 

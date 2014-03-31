@@ -324,13 +324,6 @@ inline future_t<void> make_ready_future() {
 	return promise.get_future();
 }
 
-template<class x_t, class exception_t>
-future_t<x_t> make_exception_future(const exception_t& err) {
-	promise_t<x_t> promise;
-	promise.set_exception(std::make_exception_ptr(err));
-	return promise.get_future();
-}
-
 template<class x_t>
 future_t<x_t> make_exception_future(std::exception_ptr err) {
 	promise_t<x_t> promise;
