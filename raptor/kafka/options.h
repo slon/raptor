@@ -87,6 +87,9 @@ struct options_t {
         int obuf_size;
 
 		duration_t link_timeout;
+
+		size_t producer_buffer_size;
+		size_t producer_max_outstanding_requests;
     } lib;
 };
 
