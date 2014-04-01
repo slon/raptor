@@ -12,12 +12,12 @@ using namespace raptor;
 using namespace testing;
 
 TEST(shutdown_test, sigterm_test) {
-    int pid = getpid();
-    std::function<void()> task = [pid] () {
-        usleep(50);
-        kill(pid, SIGTERM);
+	int pid = getpid();
+	std::function<void()> task = [pid] () {
+		usleep(50);
+		kill(pid, SIGTERM);
 	};
-    std::thread t(task);
-    wait_shutdown();
-    t.join();
+	std::thread t(task);
+	wait_shutdown();
+	t.join();
 }
