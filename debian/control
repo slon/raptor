@@ -4,12 +4,14 @@ Maintainer: Fedor Korotky <prime@yandex-team.ru>
 Build-Depends: debhelper (>= 8.0.0),
 			   scons (>= 2.0.0),
 			   libboost-dev,
-			   libev-dev
+			   libev-dev,
+			   libgflags-dev,
+			   libgoogle-glog-dev
 Standards-Version: 3.9.2
 
 Package: libraptor-dev
 Architecture: amd64
-Depends: libboost-dev, libev-dev
+Depends: libboost-dev, libev-dev, libgflags-dev, libglog-dev
 Description: Fibers library
 
 Package: libraptor-kafka-dev
