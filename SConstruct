@@ -27,5 +27,6 @@ for main_file in Glob("bin/*.cpp"):
 
 
 env.Program("run_ut",
-            Glob("test/ut/io/*.cpp") + Glob("test/ut/core/*.cpp") + Glob("test/ut/kafka/*.cpp") + gmock_main,
+            Glob("test/ut/io/*.cpp") + Glob("test/ut/daemon/*.cpp") +
+            Glob("test/ut/core/*.cpp") + Glob("test/ut/kafka/*.cpp") + gmock_main,
             LIBS=[kafka, raptor, gmock, "pthread", "ev", "glog", "gflags"])
