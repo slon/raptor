@@ -59,9 +59,9 @@ private:
 	std::deque<std::string> log_;
 };
 
-class fake_kafka_t : public kafka_client_t {
+class fake_kafka_client_t : public kafka_client_t {
 public:
-	fake_kafka_t(int max_log_size) : max_log_size_(max_log_size) {}
+	fake_kafka_client_t(int max_log_size) : max_log_size_(max_log_size) {}
 
 	virtual future_t<offset_t> get_log_end_offset(const std::string& topic, partition_id_t partition) {
 		std::unique_lock<mutex_t> guard(mutex_);

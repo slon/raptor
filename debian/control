@@ -11,7 +11,7 @@ Standards-Version: 3.9.2
 
 Package: libraptor-dev
 Architecture: amd64
-Depends: libboost-dev, libev-dev, libgflags-dev, libglog-dev
+Depends: libboost-dev, libev-dev, libgflags-dev, libgoogle-glog-dev
 Description: Fibers library
 
 Package: libraptor-kafka-dev
