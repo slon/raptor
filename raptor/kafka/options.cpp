@@ -33,7 +33,8 @@ std::vector<std::string> split(const std::string& str, char by) {
 		}
 	}
 
-	splitted.push_back(str.substr(last_split, str.size() - last_split));
+	if(!str.empty())
+		splitted.push_back(str.substr(last_split, str.size() - last_split));
 
 	return splitted;
 }

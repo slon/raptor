@@ -98,4 +98,6 @@ typedef std::vector<broker_addr_t> broker_list_t;
 
 broker_list_t parse_broker_list(const std::string& brokerlist);
 
+std::vector<std::string> split(const std::string& str, char by);
+
 }} // namespace raptor::kafka

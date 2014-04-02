@@ -4,6 +4,14 @@
 
 using namespace raptor::kafka;
 
+TEST(split, test) {
+	std::vector<std::string> a1 = {}, a2 = { "foo" }, a3 = { "foo", "bar", "zog" };
+
+	ASSERT_EQ(a1, split("", ','));
+	ASSERT_EQ(a2, split("foo", ','));
+	ASSERT_EQ(a3, split("foo,bar,zog", ','));
+}
+
 TEST(parse_broker_list, correct) {
 	auto blist2 = parse_broker_list("yandex.net:10");
 	auto blist3 = parse_broker_list("yandex1:234,yandex2:123,yandex3:1");
