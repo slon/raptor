@@ -15,7 +15,7 @@
 
 DEFINE_string(topic, "test", "topic name");
 DEFINE_int32(partition, 0, "partition");
-DEFINE_int32(offset, 0, "offset");
+DEFINE_uint64(offset, 0, "offset");
 DEFINE_string(broker_list, "localhost:9092", "comma separated list of brokers");
 
 using namespace raptor;
