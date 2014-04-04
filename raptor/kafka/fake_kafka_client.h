@@ -53,7 +53,6 @@ public:
 		return start_offset_ + log_.size();
 	}
 
-private:
 	offset_t start_offset_;
 	size_t max_size_;
 	std::deque<std::string> log_;
@@ -62,6 +61,14 @@ private:
 class fake_kafka_client_t : public kafka_client_t {
 public:
 	fake_kafka_client_t(int max_log_size) : max_log_size_(max_log_size) {}
+
+	std::vector<std::string> get_full_log(const std::string& topic, partition_id_t partition) {
+		std::unique_lock<mutex_t> guard(mutex_);
+
+		auto log = get_log(topic, partition);
+
+		return std::vector<std::string>(log->log_.begin(), log->log_.end());
+	}
 
 	virtual future_t<offset_t> get_log_end_offset(const std::string& topic, partition_id_t partition) {
 		std::unique_lock<mutex_t> guard(mutex_);
