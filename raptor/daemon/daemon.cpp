@@ -22,7 +22,6 @@ void wait_shutdown() {
 	sigset_t mask;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGTERM);
-	sigprocmask(SIG_BLOCK, &mask, NULL);
 
 	siginfo_t info;
 	sigwaitinfo(&mask, &info);
