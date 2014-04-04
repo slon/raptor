@@ -52,7 +52,6 @@ int main(int argc, char* argv[]) {
 			} else {
 				// NOTE: message.value is NOT zero terminated
 				std::string value(message.value, message.value_size);
-
 				std::cout << "size(" << value.size() << ")";
 			}
 
