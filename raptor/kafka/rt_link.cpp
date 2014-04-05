@@ -35,7 +35,7 @@ fd_guard_t connect_socket(const std::string& host, uint16_t port) {
 
 	int res;
 	if((res = getaddrinfo(host.c_str(), port_str.c_str(), &hints, &results)) != 0) {
-		throw std::system_error(errno, std::system_category(), "getaddrinfo(" + host + ":" + port_str + ")");
+		throw std::runtime_error("getaddrinfo(" + host + ":" + port_str + "): " + gai_strerror(res));
 	}
 
 	int last_errno = 0;

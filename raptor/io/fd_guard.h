@@ -21,6 +21,12 @@ public:
         return fd_ == -1;
     }
 
+	int release() {
+		int fd = fd_;
+		fd_ = -1;
+		return fd;
+	}
+
     fd_guard_t(const fd_guard_t& fd) = delete;
     fd_guard_t& operator = (const fd_guard_t& fd) = delete;
 
