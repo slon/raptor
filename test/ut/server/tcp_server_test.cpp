@@ -1,8 +1,14 @@
 #include <raptor/server/tcp_server.h>
 
+#include <sys/socket.h>
+
 #include <gmock/gmock.h>
 
 using namespace raptor;
+
+TEST(sockaddr, test) {
+	struct sockaddr_storage sas;
+}
 
 TEST(tcp_server_test_t, simple_bind) {
 	scheduler_t scheduler;

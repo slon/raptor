@@ -6,6 +6,7 @@
 #include <glog/logging.h>
 
 #include <raptor/core/syscall.h>
+#include <raptor/io/inet_address.h>
 
 namespace raptor {
 
@@ -48,14 +49,17 @@ fd_guard_t bind(uint16_t port) {
 
 void tcp_server_t::accept_loop() {
 	while(!shutdown_) {
-		struct sockaddr_in sockaddr;
-		socklen_t sockaddr_len = sizeof(sockaddr);
+		inet_address_t peer_address;
 
 		duration_t timeout = config_.shutdown_poll_interval;
-		fd_guard_t sock(rt_accept(accept_socket_.fd(), (struct sockaddr*)&sockaddr, &sockaddr_len, &timeout));
+		fd_guard_t sock(rt_accept(accept_socket_.fd(), peer_address.addr(), peer_address.addrlen_ptr(), &timeout));
 		if(sock.fd() < 0) {
-			if(errno != ETIMEDOUT) PLOG(ERROR) << "accept failed";
-			continue;
+			if(errno != ETIMEDOUT) {
+				PLOG(ERROR) << "accept() failed";
+				break;
+			} else {
+				continue;
+			}
 		}
 
 		scheduler_->start(&tcp_server_t::handle_accept, this, sock.release());
