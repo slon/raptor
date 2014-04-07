@@ -22,13 +22,14 @@ raptor = env.Library("libraptor.a",
 kafka = env.Library("libraptor_kafka.a",
                     Glob("raptor/kafka/*.cpp"))
 
-for main_file in Glob("bin/*.cpp"):
-    env.Program(str(main_file)[:-4], main_file, LIBS=[
-            kafka, raptor, "ev", "pthread", "glog", "gflags"])
 
+LIBS=[kafka, raptor, "pmetrics", "ev", "pthread", "glog", "gflags"]
+
+for main_file in Glob("bin/*.cpp"):
+    env.Program(str(main_file)[:-4], main_file, LIBS=LIBS)
 
 env.Program("run_ut",
             Glob("test/ut/io/*.cpp") + Glob("test/ut/daemon/*.cpp") +
             Glob("test/ut/core/*.cpp") + Glob("test/ut/kafka/*.cpp") +
 			Glob("test/ut/server/*.cpp") + gmock_main,
-            LIBS=[kafka, raptor, gmock, "pthread", "ev", "glog", "gflags"])
+            LIBS=LIBS + [gmock])

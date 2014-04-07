@@ -6,6 +6,14 @@
 
 using namespace raptor;
 
+TEST(inet_address_test_t, get_hostname) {
+	ASSERT_FALSE(get_hostname().empty());
+}
+
+TEST(inet_address_test_t, get_fqdn) {
+	ASSERT_FALSE(get_fqdn().empty());
+}
+
 TEST(inet_address_test_t, parse_ipv4) {
 	inet_address_t empty;
 	ASSERT_FALSE(empty.is_ipv4());
