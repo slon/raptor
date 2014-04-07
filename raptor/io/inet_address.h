@@ -9,6 +9,9 @@
 
 namespace raptor {
 
+std::string get_fqdn();
+std::string get_hostname();
+
 struct inet_address_t {
 public:
 	socklen_t ss_len;

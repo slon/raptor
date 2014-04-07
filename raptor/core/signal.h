@@ -9,9 +9,14 @@ class signal_t {
 public:
 	signal_t() : ready_(false), queue_(&lock_) {}
 
-	void wait() {
+	bool wait(duration_t* timeout = nullptr) {
 		std::unique_lock<spinlock_t> guard(lock_);
-		while(!ready_) queue_.wait(nullptr);
+		while(!ready_) {
+			if(!queue_.wait(timeout))
+				return false;
+		}
+
+		return true;
 	}
 
 	void signal() {

@@ -7,7 +7,8 @@ Build-Depends: debhelper (>= 8.0.0),
 			   libev-dev,
 			   libgflags-dev,
 			   libgoogle-glog-dev,
-			   yabs-gmock-dev
+			   yabs-gmock-dev,
+			   libpmetrics-dev
 Standards-Version: 3.9.2
 
 Package: libraptor-dev
