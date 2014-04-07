@@ -19,7 +19,7 @@ fd_guard_t bind(uint16_t port);
 class tcp_server_t {
 public:
 	struct config_t {
-		config_t() : shutdown_poll_interval(0.2) {}
+		config_t() : shutdown_poll_interval(0.1) {}
 
 		duration_t shutdown_poll_interval;
 	};
