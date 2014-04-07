@@ -18,7 +18,7 @@ TEST(periodic_test_t, runned) {
 		runned = true;
 	});
 
-	usleep(100);
+	usleep(10000);
 
 	ASSERT_TRUE(runned);
 }
@@ -29,5 +29,5 @@ TEST(periodic_test_t, ok_to_throw) {
 		throw std::runtime_error("foo");
 	});
 
-	usleep(100);
+	usleep(10000);
 }

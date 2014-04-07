@@ -3,6 +3,7 @@
 #include <atomic>
 
 #include <raptor/core/scheduler.h>
+#include <raptor/core/signal.h>
 
 namespace raptor {
 
@@ -15,8 +16,10 @@ public:
 	void shutdown();
 
 private:
-	std::atomic<bool> shutdown_;
+	signal_t shutdown_;
+
 	fiber_t loop_fiber_;
+
 
 	void loop(duration_t interval, std::function<void()> task);
 };
