@@ -1,0 +1,2 @@
+libraptor_kafka.a usr/lib
+raptor/kafka/*.h usr/include/raptor/kafka

@@ -1,0 +1,21 @@
+Source: libraptor
+Priority: extra
+Maintainer: Fedor Korotky <prime@yandex-team.ru>
+Build-Depends: debhelper (>= 8.0.0),
+			   scons (>= 2.0.0),
+			   libboost-dev,
+			   libev-dev,
+			   libgflags-dev,
+			   libgoogle-glog-dev,
+			   yabs-gmock-dev
+Standards-Version: 3.9.2
+
+Package: libraptor-dev
+Architecture: amd64
+Depends: libboost-dev, libev-dev, libgflags-dev, libgoogle-glog-dev
+Description: Fibers library
+
+Package: libraptor-kafka-dev
+Architecture: amd64
+Depends: libboost-dev, libev-dev, libraptor-dev(= ${source:Version})
+Description: Kafka 0.8 client library

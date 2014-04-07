@@ -1,0 +1,6 @@
+*~
+*.a
+*.o
+*.swp
+.sconsign.dblite
+test/run_ut
