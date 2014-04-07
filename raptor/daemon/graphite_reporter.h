@@ -5,6 +5,7 @@
 namespace raptor {
 
 std::string get_graphite_prefix();
+void replace(std::string* str, char from, char to);
 
 class graphite_reporter_t {
 public:

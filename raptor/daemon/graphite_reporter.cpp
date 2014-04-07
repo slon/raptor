@@ -25,14 +25,17 @@ void graphite_reporter_t::send_metrics() {
 	write_all(graphite.fd(), graphite_report.data(), graphite_report.size(), &timeout);
 }
 
+void replace(std::string* str, char from, char to) {
+	for(size_t pos = 0; pos < str->size(); ++pos) {
+		if((*str)[pos] == from) (*str)[pos] = to;
+	}
+}
+
+
 std::string get_graphite_prefix() {
 	std::string fqdn = get_fqdn();
-
-	for(size_t pos = 0; pos < fqdn.size(); ++pos) {
-		if(fqdn[pos] == '.') fqdn[pos] = '_';
-	}
-
-	return fqdn;
+	replace(&fqdn, '.', '_');
+	return "one_min." + fqdn;
 }
 
 
