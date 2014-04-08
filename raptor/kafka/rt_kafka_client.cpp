@@ -10,7 +10,9 @@ namespace raptor { namespace kafka {
 rt_kafka_client_t::rt_kafka_client_t(scheduler_t* scheduler, const broker_list_t& broker_list, const options_t& options) :
 	options(options), network(
 		new rt_network_t(scheduler, std::unique_ptr<link_cache_t>(new rt_link_cache_t(scheduler, options)), options, broker_list)
-	) {}
+	) {
+	timer = pm::get_root().timer("kafka");
+}
 
 future_t<offset_t> rt_kafka_client_t::get_log_offset(
 		const std::string& topic, partition_id_t partition, int64_t time
@@ -92,9 +94,15 @@ future_t<void> rt_kafka_client_t::produce(
 }
 
 future_t<void> rt_kafka_client_t::send(const std::string& topic, partition_id_t partition, request_ptr_t request, response_ptr_t response) {
-	return network->get_link(topic, partition).bind([request, response] (future_t<link_ptr_t> link) {
+	auto start_time = timer.start();
+
+	future_t<void> sended = network->get_link(topic, partition).bind([request, response] (future_t<link_ptr_t> link) {
 		return link.get()->send(request, response);
 	});
+
+	sended.then([this, start_time] (future_t<void>) { timer.finish(start_time); });
+
+	return sended;
 }
 
 }} // namespace raptor::kafka

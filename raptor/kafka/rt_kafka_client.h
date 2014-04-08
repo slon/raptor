@@ -3,6 +3,8 @@
 #include <map>
 #include <memory>
 
+#include <pm/metrics.h>
+
 #include <raptor/core/scheduler.h>
 
 #include <raptor/kafka/kafka_client.h>
@@ -38,6 +40,7 @@ public:
 
 private:
 	options_t options;
+	pm::timer_t timer;
 
 	std::unique_ptr<network_t> network;
 
