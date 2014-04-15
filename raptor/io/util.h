@@ -7,8 +7,6 @@
 
 namespace raptor {
 
-fd_guard_t socket_connect(inet_address_t address, duration_t* timeout);
-
 void write_all(int fd, char const* data, size_t size, duration_t* timeout = NULL);
 
 } // namespace raptor

@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 
+#include <raptor/core/scheduler.h>
+
 using namespace raptor;
 
 TEST(inet_address_test_t, get_hostname) {
@@ -12,6 +14,11 @@ TEST(inet_address_test_t, get_hostname) {
 
 TEST(inet_address_test_t, get_fqdn) {
 	ASSERT_FALSE(get_fqdn().empty());
+}
+
+TEST(inet_address_test_t, resolve) {
+	inet_address_t addr = inet_address_t::resolve_ip("yandex.ru");
+	ASSERT_THROW(inet_address_t::resolve_ip("asldkjfqwkjnflsakdjnv.rasdlu"), std::runtime_error);
 }
 
 TEST(inet_address_test_t, parse_ipv4) {
@@ -61,4 +68,22 @@ TEST(inet_address_test_t, parse_invalid_input) {
 	ASSERT_THROW(inet_address_t::parse_ip(""), std::runtime_error);
 	ASSERT_THROW(inet_address_t::parse_ip("yandex.ru"), std::runtime_error);
 	ASSERT_THROW(inet_address_t::parse_ip("1.2.3.4.5"), std::runtime_error);
+}
+
+TEST(socket_test_t, connect_timeout) {
+	scheduler_t s;
+
+	s.start([] () {
+		auto address = inet_address_t::parse_ip_port("127.0.0.1", "29853");
+
+		auto listening_socket = address.bind();
+		try {
+			while(true) {
+				duration_t timeout(0.01);
+				address.connect(&timeout);
+			}
+		} catch(std::exception& e) {
+			ASSERT_TRUE(true);
+		}
+	}).join();
 }
