@@ -4,6 +4,7 @@
 
 #include <raptor/kafka/rt_network.h>
 #include <raptor/kafka/rt_link.h>
+#include <raptor/io/inet_address.h>
 #include <raptor/daemon/daemon.h>
 
 DEFINE_string(host, "localhost", "kafka host");
@@ -20,7 +21,9 @@ int main(int argc, char* argv[]) {
 
 	options_t opts;
 
-	rt_link_t link(connect_socket(FLAGS_host, FLAGS_port), opts);
+	auto addr = inet_address_t::resolve_ip(FLAGS_host);
+	addr.set_port(FLAGS_port);
+	rt_link_t link(addr.connect(), opts);
 
 	auto request = std::make_shared<metadata_request_t>();
 	auto response = std::make_shared<metadata_response_t>();

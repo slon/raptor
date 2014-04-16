@@ -50,6 +50,19 @@ public:
 		return &ss_len;
 	}
 
+	void set_port(uint16_t port) {
+		switch(ss.ss_family) {
+		case AF_INET:
+			((struct sockaddr_in*)&ss)->sin_port = htons(port);
+			break;
+		case AF_INET6:
+			((struct sockaddr_in6*)&ss)->sin6_port = htons(port);
+			break;
+		default:
+			break;
+		}
+	}
+
 	uint16_t port() {
 		switch(ss.ss_family) {
 		case AF_INET:
