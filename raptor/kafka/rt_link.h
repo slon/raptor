@@ -18,8 +18,6 @@ class request_t;
 class response_t;
 class options_t;
 
-fd_guard_t connect_socket(const std::string& host, uint16_t port);
-
 class rt_link_t : public link_t {
 public:
 	rt_link_t(fd_guard_t socket, const options_t& options);
