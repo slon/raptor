@@ -1,13 +1,47 @@
 #include <raptor/core/syscall.h>
 
 #include <sys/ioctl.h>
+#include <poll.h>
+#include <string.h>
 
 #include <raptor/core/impl.h>
 
 namespace raptor {
 
+int wait_io(int fd, int flags, duration_t* timeout) {
+	if(SCHEDULER_IMPL) {
+		return SCHEDULER_IMPL->wait_io(fd, flags, timeout);
+	} else {
+		struct pollfd pollfd;
+		memset(&pollfd, 0, sizeof(pollfd));
+
+		pollfd.fd = fd;
+		if(flags & EV_READ) pollfd.events |= POLLIN;
+		if(flags & EV_WRITE) pollfd.events |= POLLOUT;
+
+		auto poll_start = std::chrono::system_clock::now();
+		int res = poll(&pollfd, 1, (int)(timeout->count() * 1000));
+		auto poll_end = std::chrono::system_clock::now();
+
+		*timeout -= (poll_end - poll_start);
+
+		if(res == 1) {
+			return scheduler_impl_t::READY;
+		} else if(res == 0) {
+			return scheduler_impl_t::TIMEDOUT;
+		} else {
+			return scheduler_impl_t::ERROR;
+		}
+	}
+}
+
 void rt_sleep(duration_t* timeout) {
-	SCHEDULER_IMPL->wait_timeout(timeout);
+	if(SCHEDULER_IMPL) {
+		SCHEDULER_IMPL->wait_timeout(timeout);
+	} else {
+		usleep(timeout->count() * 1000000);
+		*timeout = duration_t(0.0);
+	}
 }
 
 int rt_ctl_nonblock(int fd) {
@@ -21,7 +55,7 @@ inline ret_t wrap_syscall(ret_t (*fn)(int fd, args_t...), duration_t* timeout, i
 		ret_t res = (*fn)(fd, args...);
 
 		if(res < 0 && errno == EAGAIN) {
-			int wait_res = SCHEDULER_IMPL->wait_io(fd, flag, timeout);
+			int wait_res = wait_io(fd, flag, timeout);
 			if(wait_res == scheduler_impl_t::TIMEDOUT) {
 				errno = ETIMEDOUT;
 			} else {
@@ -65,7 +99,7 @@ int rt_connect(int fd, struct sockaddr const *addr, socklen_t addrlen, duration_
 	int res = connect(fd, addr, addrlen);
 
 	if(res < 0 && errno == EINPROGRESS) {
-		int wait_res = SCHEDULER_IMPL->wait_io(fd, EV_WRITE, timeout);
+		int wait_res = wait_io(fd, EV_WRITE, timeout);
 
 		if(wait_res == scheduler_impl_t::ERROR) {
 			int err; socklen_t errlen = sizeof(err);
