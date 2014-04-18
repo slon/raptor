@@ -19,6 +19,7 @@ void set_default_options(options_t* options) {
 	options->lib.producer_buffer_size = 1024 * 1024;
 	options->lib.producer_max_outstanding_requests = 16;
 
+	options->lib.link_timeout = std::chrono::seconds(2);
     options->lib.metadata_refresh_backoff = std::chrono::milliseconds(150);
 }
 
