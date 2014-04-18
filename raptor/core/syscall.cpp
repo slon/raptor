@@ -8,7 +8,7 @@
 
 namespace raptor {
 
-int wait_io(int fd, int flags, duration_t* timeout) {
+scheduler_impl_t::wait_result_t wait_io(int fd, int flags, duration_t* timeout) {
 	if(SCHEDULER_IMPL) {
 		return SCHEDULER_IMPL->wait_io(fd, flags, timeout);
 	} else {
@@ -20,10 +20,12 @@ int wait_io(int fd, int flags, duration_t* timeout) {
 		if(flags & EV_WRITE) pollfd.events |= POLLOUT;
 
 		auto poll_start = std::chrono::system_clock::now();
-		int res = poll(&pollfd, 1, (int)(timeout->count() * 1000));
+		int poll_timeout = timeout ? (int)(timeout->count() * 1000) : -1;
+		int res = poll(&pollfd, 1, poll_timeout);
 		auto poll_end = std::chrono::system_clock::now();
 
-		*timeout -= (poll_end - poll_start);
+		if(timeout)
+			*timeout -= (poll_end - poll_start);
 
 		if(res == 1) {
 			return scheduler_impl_t::READY;
