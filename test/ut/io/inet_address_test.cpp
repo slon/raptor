@@ -70,6 +70,17 @@ TEST(inet_address_test_t, parse_invalid_input) {
 	ASSERT_THROW(inet_address_t::parse_ip("1.2.3.4.5"), std::runtime_error);
 }
 
+TEST(socket_test_t, normal_connect) {
+	auto address = inet_address_t::parse_ip_port("127.0.0.1", "29854");
+
+	auto server_socket = address.bind();
+
+	auto client_socket1 = address.connect();
+
+	duration_t timeout(0.1);
+	auto client_socket2 = address.connect(&timeout);
+}
+
 TEST(socket_test_t, connect_timeout) {
 	scheduler_t s;
 

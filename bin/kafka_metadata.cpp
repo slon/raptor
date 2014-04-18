@@ -23,7 +23,9 @@ int main(int argc, char* argv[]) {
 
 	auto addr = inet_address_t::resolve_ip(FLAGS_host);
 	addr.set_port(FLAGS_port);
-	rt_link_t link(addr.connect(), opts);
+
+	duration_t timeout(0.4);
+	rt_link_t link(addr.connect(&timeout), opts);
 
 	auto request = std::make_shared<metadata_request_t>();
 	auto response = std::make_shared<metadata_response_t>();
