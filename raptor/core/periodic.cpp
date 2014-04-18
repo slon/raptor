@@ -22,7 +22,7 @@ void periodic_t::loop(duration_t interval, std::function<void()> task) {
 			LOG(ERROR) << e.what();
 		}
 
-		duration_t sleep_time = std::min(duration_t(1.0), interval);
+		duration_t sleep_time = interval;
 		if(shutdown_.wait(&sleep_time)) {
 			break;
 		}
