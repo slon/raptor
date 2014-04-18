@@ -18,7 +18,7 @@ void graphite_reporter_t::send_metrics() {
 	pm::get_root().print(&printer);
 
 	auto addr = inet_address_t::parse_ip_port("127.0.0.1", "42000");
-	duration_t timeout(1.);
+	duration_t timeout(60.);
 	fd_guard_t graphite = addr.connect(&timeout);
 
 	std::string graphite_report = printer.result();
