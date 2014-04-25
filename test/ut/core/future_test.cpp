@@ -177,3 +177,12 @@ TEST(future_test_t, bind_on_exception_future) {
 	ASSERT_TRUE(f4.has_exception());
 	ASSERT_TRUE(f5.has_value());
 }
+
+TEST(future_test_t, subscribe_on_future) {
+	future_t<int> f1 = make_ready_future(1);
+
+	int a = 0;
+	f1.subscribe([&a] (future_t<int> f) { a = f.get(); }); 
+
+	EXPECT_EQ(1, a);
+}

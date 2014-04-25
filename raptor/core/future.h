@@ -65,6 +65,11 @@ public:
 	template<class fn_t>
 	auto bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_t<x_t>())) const;
 
+	template<class fn_t>
+	void subscribe(fn_t&& fn) const;
+	template<class fn_t>
+	void subscribe(executor_t* executor, fn_t&& fn) const;
+
 	friend class promise_t<x_t>;
 
 private:
