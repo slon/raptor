@@ -288,6 +288,28 @@ auto future_t<x_t>::bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_
 }
 
 template<class x_t>
+template<class fn_t>
+void future_t<x_t>::subscribe(fn_t&& fn) const {
+	subscribe(nullptr, fn);
+}
+
+template<class x_t>
+template<class fn_t>
+void future_t<x_t>::subscribe(executor_t* executor, fn_t&& fn) const {
+	closure_t subscriber(executor, [fn, state_] () {
+		future_t<x_t> this_future(state_);
+
+		try {
+			fn(this_future);
+		} catch(...) {
+			abort();
+		}
+	});
+
+	state_->subscribe(subscriber);
+}
+
+template<class x_t>
 promise_t<x_t>::promise_t() : state_(std::make_shared<shared_state_t<x_t>>()) {}
 
 template<class x_t>
