@@ -40,7 +40,8 @@ public:
 
 private:
 	options_t options;
-	pm::timer_t timer;
+	pm::timer_t rpc_timer;
+	pm::meter_t error_meter;
 
 	std::unique_ptr<network_t> network;
 

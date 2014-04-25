@@ -11,7 +11,8 @@ rt_kafka_client_t::rt_kafka_client_t(scheduler_t* scheduler, const broker_list_t
 	options(options), network(
 		new rt_network_t(scheduler, std::unique_ptr<link_cache_t>(new rt_link_cache_t(scheduler, options)), options, broker_list)
 	) {
-	timer = pm::get_root().timer("kafka");
+	rpc_timer = pm::get_root().subtree("kafka").timer("rpc");
+	error_meter = pm::get_root().subtree("kafka").meter("error");
 }
 
 future_t<offset_t> rt_kafka_client_t::get_log_offset(
@@ -22,11 +23,13 @@ future_t<offset_t> rt_kafka_client_t::get_log_offset(
 
 	return send(topic, partition, request, response).then([request, response, this] (future_t<void> future) {
 		if(future.has_exception()) {
+			error_meter.mark();
 			network->refresh_metadata();
 			future.get();
 		}
 
 		if(response->err != kafka_err_t::NO_ERROR) {
+			error_meter.mark();
 			network->refresh_metadata();
 			throw_kafka_err("get_log_end_offset", response->err, request->topic, request->partition_id);
 		}
@@ -58,11 +61,13 @@ future_t<message_set_t> rt_kafka_client_t::fetch(
 
 	return send(topic, partition, request, response).then([request, response, this] (future_t<void> future) {
 		if(future.has_exception()) {
+			error_meter.mark();
 			network->refresh_metadata();
 			future.get();
 		}
 
 		if(response->err != kafka_err_t::NO_ERROR) {
+			error_meter.mark();
 			network->refresh_metadata();
 			throw_kafka_err("fetch", response->err, request->topic, request->partition);
 		}
@@ -82,11 +87,13 @@ future_t<void> rt_kafka_client_t::produce(
 
 	return send(topic, partition, request, response).then([request, response, this] (future_t<void> future) {
 		if(future.has_exception()) {
+			error_meter.mark();
 			network->refresh_metadata();
 			future.get();
 		}
 
 		if(response->err != kafka_err_t::NO_ERROR) {
+			error_meter.mark();
 			network->refresh_metadata();
 			throw_kafka_err("produce", response->err, request->topic, request->partition);
 		}
@@ -94,13 +101,13 @@ future_t<void> rt_kafka_client_t::produce(
 }
 
 future_t<void> rt_kafka_client_t::send(const std::string& topic, partition_id_t partition, request_ptr_t request, response_ptr_t response) {
-	auto start_time = timer.start();
+	auto start_time = rpc_timer.start();
 
 	future_t<void> sended = network->get_link(topic, partition).bind([request, response] (future_t<link_ptr_t> link) {
 		return link.get()->send(request, response);
 	});
 
-	sended.then([this, start_time] (future_t<void>) { timer.finish(start_time); });
+	sended.subscribe([this, start_time] (future_t<void>) { rpc_timer.finish(start_time); });
 
 	return sended;
 }
