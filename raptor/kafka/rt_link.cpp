@@ -93,8 +93,10 @@ void rt_link_t::send_loop() {
 			task.request->write(&writer);
 			writer.flush_all();
 
-			if(!task.response)
+			if(!task.response) {
 				task.promise.set_value();
+				continue;
+			}
 
 			if(!recv_channel.put(task)) {
 				task.promise.set_exception(std::make_exception_ptr(std::runtime_error("rt_link_t is closed #1")));
