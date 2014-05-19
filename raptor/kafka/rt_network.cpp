@@ -17,7 +17,8 @@ rt_network_t::rt_network_t(
 }
 
 void rt_network_t::shutdown() {
-	metadata_.wait();
+	std::unique_lock<spinlock_t> guard(metadata_lock_);
+	metadata_refresher_.join();
 }
 
 void rt_network_t::refresh_metadata() {
@@ -29,9 +30,7 @@ void rt_network_t::refresh_metadata() {
 	promise_t<metadata_t> metadata_promise;
 	metadata_ = metadata_promise.get_future();
 
-	guard.unlock();
-
-	scheduler_->start([metadata_promise, this] () mutable {
+	metadata_refresher_ = scheduler_->start([metadata_promise, this] () mutable {
 		try {
 			duration_t backoff = options_.lib.metadata_refresh_backoff;
 			rt_sleep(&backoff);
@@ -44,7 +43,6 @@ void rt_network_t::refresh_metadata() {
 			auto link = link_cache_->connect(addr).get();
 			link->send(request, response).get();
 
-			// TODO
 			metadata_promise.set_value(metadata_t(*response));
 		} catch(std::exception& ) {
 			metadata_promise.set_exception(std::current_exception());

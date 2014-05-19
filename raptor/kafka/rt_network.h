@@ -36,6 +36,7 @@ private:
 
 	spinlock_t metadata_lock_;
 	future_t<metadata_t> metadata_;
+	fiber_t metadata_refresher_;
 	future_t<metadata_t> get_metadata();
 
 	std::atomic<size_t> next_bootstrap_broker_;
