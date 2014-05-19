@@ -25,6 +25,12 @@ protected:
 	virtual void flush();
 };
 
+enum class compression_codec_t {
+	NONE = 0,
+	GZIP = 1,
+	SNAPPY = 2
+};
+
 struct message_t {
 	explicit message_t(const std::string& _value) :
 		offset(-1), key(NULL), key_size(0),
@@ -76,6 +82,8 @@ private:
 	blob_t data_;
 	offset_t max_offset_;
 	size_t message_count_;
+
+	size_t validate(blob_t message_set, bool allow_compressed);
 };
 
 class message_set_builder_t {

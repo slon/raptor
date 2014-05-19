@@ -17,9 +17,7 @@ public:
 
 private:
 	signal_t shutdown_;
-
 	fiber_t loop_fiber_;
-
 
 	void loop(duration_t interval, std::function<void()> task);
 };
