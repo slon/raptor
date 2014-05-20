@@ -3,9 +3,10 @@
 #include <vector>
 #include <memory>
 
+#include <raptor/io/io_buff.h>
+
 #include <raptor/kafka/defs.h>
 #include <raptor/kafka/wire.h>
-#include <raptor/kafka/blob.h>
 
 namespace raptor { namespace kafka {
 
@@ -49,9 +50,17 @@ struct message_t {
 
 class message_set_t {
 public:
-	message_set_t() : max_offset_(-1), message_count_(0) {}
+	message_set_t() {}
 
-	explicit message_set_t(blob_t data) : data_(data), max_offset_(-1), message_count_(0) {}
+	message_set_t(const message_set_t& other) : data_(other.data_->clone()) {}
+	message_set_t& operator = (const message_set_t& other) { data_ = other.data_->clone(); }
+
+	message_set_t(message_set_t&&) = default;
+	message_set_t& operator = (message_set_t&& other) = default;
+
+	explicit message_set_t(std::unique_ptr<io_buff_t> data) : data_(std::move(data)) {
+		assert(!data_->is_chained());
+	}
 
 	size_t wire_size() const;
 	void read(wire_reader_t* reader);
@@ -63,8 +72,8 @@ public:
 		message_t next();
 
 	private:
-		iter_t(blob_t data)
-			: reader_(data) {}
+		iter_t(io_buff_t* buff)
+			: reader_(buff) {}
 
 		wire_reader_t reader_;
 
@@ -73,22 +82,15 @@ public:
 
 	iter_t iter() const;
 
-	int64_t max_offset() const { return max_offset_; }
-	size_t message_count() const { return message_count_; }
-
-	size_t validate();
+	void validate(bool decompress = true);
 
 private:
-	blob_t data_;
-	offset_t max_offset_;
-	size_t message_count_;
-
-	size_t validate(blob_t message_set, bool allow_compressed);
+	std::unique_ptr<io_buff_t> data_;
 };
 
 class message_set_builder_t {
 public:
-	explicit message_set_builder_t(size_t max_size) : size_(max_size) {
+	explicit message_set_builder_t(size_t max_size) : max_size_(max_size) {
 		reset();
 	}
 
@@ -107,11 +109,10 @@ public:
 	message_set_builder_t& operator = (message_set_builder_t&&) = default;
 
 private:
-	std::shared_ptr<char> buffer_;
-	size_t size_;
-	blob_writer_t writer_;
+	size_t max_size_;
 
-	static std::shared_ptr<char> make_buffer(size_t size);
+	std::unique_ptr<io_buff_t> data_;
+	blob_writer_t writer_;
 };
 
 }} // namespace raptor::namespace kafka

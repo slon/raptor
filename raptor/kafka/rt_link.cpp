@@ -34,20 +34,21 @@ void recv_all(int fd, char* buff, size_t size) {
 	}
 }
 
-blob_t read_blob(int fd) {
-	int32_t blob_size;
+std::unique_ptr<io_buff_t> read_buff(int fd) {
+	int32_t buff_size;
 
-	recv_all(fd, reinterpret_cast<char*>(&blob_size), sizeof(int32_t));
-	blob_size = be32toh(blob_size);
+	recv_all(fd, reinterpret_cast<char*>(&buff_size), sizeof(int32_t));
+	buff_size = be32toh(buff_size);
 
-	if(blob_size > 64 * 1024 * 1024) {
+	if(buff_size > 64 * 1024 * 1024) {
 		throw exception_t("blob size > 64MB");
 	}
 
-	std::shared_ptr<char> blob(new char[blob_size], [] (char* p) { delete[] p; });
-	recv_all(fd, blob.get(), blob_size);
+	auto buff = io_buff_t::create(buff_size);
+	recv_all(fd, (char*)buff->data(), buff_size);
+	buff->append(buff_size);
 
-	return blob_t(blob, blob_size);
+	return std::move(buff);
 }
 
 rt_link_t::rt_link_t(fd_guard_t socket, const options_t& options)
@@ -120,8 +121,8 @@ void rt_link_t::recv_loop() {
 
 	while(recv_channel.get(&task)) {
 		try {
-			blob_t blob = read_blob(socket.fd());
-			wire_reader_t reader(blob);
+			std::unique_ptr<io_buff_t> buff = read_buff(socket.fd());
+			wire_reader_t reader(buff.get());
 			task.response->read(&reader);
 			task.promise.set_value();
 		} catch(...) {

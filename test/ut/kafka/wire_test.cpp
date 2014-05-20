@@ -33,17 +33,21 @@ TEST(wire_writer_t, ints) {
 }
 
 TEST(wire_reader_t, ints) {
-	wire_reader_t reader = mock_reader("7FFF");
+	auto buff = make_buff(unhexify("7FFF"));
+	wire_reader_t reader(buff.get());
 
 	ASSERT_EQ(127, reader.int8());
 	ASSERT_EQ(-1, reader.int8());
 
-	reader = mock_reader("AAFF");
+	buff = make_buff(unhexify("AAFF"));
+	reader = wire_reader_t(buff.get());
 	ASSERT_EQ((int16_t)0xAAFF, reader.int16());
 
-	reader = mock_reader("ABCD0123");
+	buff = make_buff(unhexify("ABCD0123"));
+	reader = wire_reader_t(buff.get());
 	ASSERT_EQ((int32_t)0xABCD0123, reader.int32());
 
-	reader = mock_reader("0123456789ABCDEF");
+	buff = make_buff(unhexify("0123456789ABCDEF"));
+	reader = wire_reader_t(buff.get());
 	ASSERT_EQ(0x0123456789ABCDEF, reader.int64());
 }

@@ -820,14 +820,12 @@ public:
 	 * unmodified.  Throws std::overflow_error if the length of the entire chain
 	 * larger than can be described by a uint32_t capacity.
 	 *
-	 * Returns ByteRange that points to the data io_buff_t stores.
 	 */
-	// ByteRange coalesce() {
-	// 	if (is_chained()) {
-	// 		coalesce_slow();
-	// 	}
-	// 	return ByteRange(data_, length_);
-	// }
+	void coalesce() {
+		if (is_chained()) {
+			coalesce_slow();
+		}
+	}
 
 	/**
 	 * Ensure that this chain has at least maxLength bytes available as a
@@ -875,17 +873,6 @@ public:
 	 * part of a larger chain).
 	 */
 	std::unique_ptr<io_buff_t> clone_one() const;
-
-	/**
-	 * Return an iovector suitable for e.g. writev()
-	 *
-	 *   auto iov = buf->getIov();
-	 *   auto xfer = writev(fd, iov.data(), iov.size());
-	 *
-	 * Naturally, the returned iovector is invalid if you modify the buffer
-	 * chain.
-	 */
-	// std::vector<struct iovec> getIov() const;
 
 	// Overridden operator new and delete.
 	// These directly use malloc() and free() to allocate the space for io_buff_t

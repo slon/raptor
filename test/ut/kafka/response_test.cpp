@@ -7,13 +7,15 @@
 using namespace raptor::kafka;
 
 TEST(metadata_response_t, read) {
-	wire_reader_t reader(make_blob(unhexify(
+	auto buff = make_buff(unhexify(
 		 std::string("ABCD1234") +
 		"00000002" +
 		"00000015" + "0009" + hexify("yandex.ru") + "00000AFA" +
 		"00000016" + "000A" + hexify("yandex.net") + "00000FAF" +
 		"00000000"
-	)));
+	));
+
+	wire_reader_t reader(buff.get());
 
 	metadata_response_t meta;
 	meta.read(&reader);
@@ -26,12 +28,14 @@ TEST(metadata_response_t, read) {
 	ASSERT_EQ(meta.brokers()[0].port, 0xAFA);
 	ASSERT_EQ(meta.brokers()[1].port, 0xFAF);
 
-	reader = wire_reader_t(make_blob(unhexify(
+	buff = make_buff(unhexify(
 		std::string("0000") + "0003" + hexify("foo") +
 		"00000001" + "0000" + "00000010" + "00000015" +
 					 "00000002" + "00000016" + "00000018"
 					 "00000001" + "00000018"
-	)));
+	));
+
+	reader = wire_reader_t(buff.get());
 
 	topic_metadata_t topic;
 	topic.read(&reader);

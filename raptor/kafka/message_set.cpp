@@ -43,12 +43,12 @@ void blob_writer_t::flush() {
 }
 
 size_t message_set_t::wire_size() const {
-	return 4 + data_.size();
+	return 4 + data_->length();
 }
 
 void message_set_t::write(wire_writer_t* writer) const {
-	writer->int32(data_.size());
-	writer->raw(data_.data(), data_.size());
+	writer->int32(data_->length());
+	writer->raw((char*)data_->data(), data_->length());
 }
 
 void message_set_t::read(wire_reader_t* reader) {
@@ -56,20 +56,20 @@ void message_set_t::read(wire_reader_t* reader) {
 
 	if(size > 0) {
 		data_ = reader->raw(size);
-
-		data_ = data_.slice(0, validate());
+		validate();
 	}
 }
 
-size_t message_set_t::validate() {
-	wire_reader_t reader(data_);
 
-	message_count_ = 0;
+void message_set_t::validate(bool decompress) {
+	wire_reader_t reader(data_.get());
+	size_t msgset_end = 0;
+
 	while(true) {
 		size_t msg_start = reader.pos();
-
 		if(reader.remaining() < (size_t)12) {
-			return msg_start;
+			msgset_end = msg_start;
+			break;
 		}
 
 		int64_t offset = reader.int64();
@@ -78,11 +78,9 @@ size_t message_set_t::validate() {
 									   "msg.size");
 
 		if(reader.remaining() < (size_t)msg_size) {
-			return msg_start;
+			msgset_end = msg_start;
+			break;
 		}
-
-		max_offset_ = offset;
-		++message_count_;
 
 		int32_t crc = reader.int32();
 
@@ -104,13 +102,11 @@ size_t message_set_t::validate() {
 		}
 
 		reader.skip_bytes(); // skip key
-
-		int32_t value_size = reader.int32();
-		if(value_size < 0) {
-			throw exception_t("null value");
-		}
-		reader.skip(value_size); // skip value
+		reader.skip_bytes(); // skip value
 	}
+
+	// server may return incomplete part of message, we should just cut it off
+	data_->trim_end(data_->length() - msgset_end);
 }
 
 bool message_set_t::iter_t::is_end() const {
@@ -146,7 +142,7 @@ message_t message_set_t::iter_t::next() {
 }
 
 message_set_t::iter_t message_set_t::iter() const {
-	return iter_t(data_);
+	return iter_t(data_.get());
 }
 
 bool message_set_builder_t::append(char const* value, size_t size) {
@@ -208,16 +204,14 @@ bool message_set_builder_t::append(message_t msg) {
 }
 
 void message_set_builder_t::reset() {
-	buffer_ = make_buffer(size_);
-	writer_ = blob_writer_t(buffer_.get(), size_);
-}
-
-std::shared_ptr<char> message_set_builder_t::make_buffer(size_t size) {
-	return std::shared_ptr<char>(new char[size], [] (char* p) { delete[] p; });
+	data_ = io_buff_t::create(max_size_);
+	writer_ = blob_writer_t((char*)data_->data(), max_size_);
 }
 
 message_set_t message_set_builder_t::build() {
-	return message_set_t(blob_t(buffer_, writer_.pos()));
+	auto msgset_data_ = data_->clone();
+	msgset_data_->append(writer_.pos());
+	return message_set_t(std::move(msgset_data_));
 }
 
 bool message_set_builder_t::empty() const {

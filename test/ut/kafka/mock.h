@@ -1,11 +1,14 @@
 #pragma once
 
-#include <raptor/kafka/wire.h>
-
 #include <cstdlib>
 #include <cassert>
 #include <iostream>
 
+#include <raptor/io/io_buff.h>
+
+#include <raptor/kafka/wire.h>
+
+using namespace raptor;
 using namespace raptor::kafka;
 
 inline char to_16(char c) {
@@ -16,10 +19,11 @@ inline char from_16(char c) {
 	return (c < 'A') ? (c - '0') : (c - 'A' + 10);
 }
 
-inline blob_t make_blob(const std::string& str) {
-	std::shared_ptr<char> data(new char[str.size()], [] (char* p) { delete[] p; });
-	memcpy(data.get(), &(str[0]), str.size());
-	return blob_t(data, str.size());
+inline std::unique_ptr<io_buff_t> make_buff(const std::string& str) {
+	auto buff = io_buff_t::create(str.length());
+	memcpy((char*)buff->writable_data(), str.data(), str.length());
+	buff->append(str.length());
+	return std::move(buff);
 }
 
 inline std::string hexify(const std::string& str) {
@@ -45,10 +49,6 @@ inline std::string unhexify(const std::string& str) {
 	}
 
 	return result;
-}
-
-inline wire_reader_t mock_reader(const std::string& str) {
-	return wire_reader_t(make_blob(unhexify(str)));
 }
 
 inline std::string remove_spaces(const std::string& str) {
