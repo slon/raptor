@@ -23,7 +23,7 @@ kafka = env.Library("libraptor_kafka.a",
                     Glob("raptor/kafka/*.cpp"))
 
 
-LIBS=[kafka, raptor, "pmetrics", "ev", "pthread", "glog", "gflags"]
+LIBS=[kafka, raptor, "pmetrics", "ev", "pthread", "glog", "gflags", "snappy"]
 
 for main_file in Glob("bin/*.cpp"):
     env.Program(str(main_file)[:-4], main_file, LIBS=LIBS)

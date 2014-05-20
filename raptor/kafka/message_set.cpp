@@ -4,13 +4,14 @@
 #include <iostream>
 
 #include <boost/crc.hpp>
+#include <snappy.h>
 
 #include <raptor/kafka/exception.h>
 
 namespace raptor { namespace kafka {
 
 static const int32_t MAX_MESSAGE_SET_SIZE = 16 * 1024 * 1024; // 16Mb
-static const int32_t MAX_MESSAGE_SIZE = 64 * 1024; // 64Kb
+static const int32_t MAX_MESSAGE_SIZE = 16 * 1024 * 1024; // 16Mb
 
 size_t blob_writer_t::pos() const {
 	if(full_) {
@@ -73,9 +74,7 @@ void message_set_t::validate(bool decompress) {
 		}
 
 		int64_t offset = reader.int64();
-		int32_t msg_size = check_range(reader.int32(),
-									   0, MAX_MESSAGE_SIZE,
-									   "msg.size");
+		int32_t msg_size = check_range(reader.int32(), 0, MAX_MESSAGE_SIZE, "msg.size");
 
 		if(reader.remaining() < (size_t)msg_size) {
 			msgset_end = msg_start;
@@ -97,8 +96,9 @@ void message_set_t::validate(bool decompress) {
 			throw exception_t("unsupported msg version");
 		}
 
-		if(0 != reader.int8()) {
-			throw exception_t("compression not supported");
+		int8_t compression = reader.int8();
+		if(compression != 0 && compression != (int8_t)compression_codec_t::SNAPPY) {
+			throw exception_t("unsupported compression");
 		}
 
 		reader.skip_bytes(); // skip key
@@ -122,7 +122,7 @@ message_t message_set_t::iter_t::next() {
 	reader_.int32(); // skip size
 	reader_.int32(); // skip crc
 	reader_.int8(); // skip version
-	reader_.int8(); // skip compression
+	msg.flags = reader_.int8(); // flags
 
 	int32_t key_size = reader_.int32();
 	if(key_size >= 0) {
@@ -143,6 +143,12 @@ message_t message_set_t::iter_t::next() {
 
 message_set_t::iter_t message_set_t::iter() const {
 	return iter_t(data_.get());
+}
+
+message_set_builder_t::message_set_builder_t(size_t max_size,
+			compression_codec_t compression)
+		: max_size_(max_size), compression_(compression) {
+	reset();
 }
 
 bool message_set_builder_t::append(char const* value, size_t size) {
@@ -179,7 +185,7 @@ bool message_set_builder_t::append(message_t msg) {
 
 	writer_.int32(0); // crc
 	writer_.int8(0); // version
-	writer_.int8(0); // flags
+	writer_.int8(msg.flags); // flags
 
 	// key
 	if(msg.key == NULL) {
@@ -194,9 +200,7 @@ bool message_set_builder_t::append(message_t msg) {
 	// jump writer to crc_field, compute and write crc, jump back
 	writer_.set_pos(crc_pos);
 	boost::crc_32_type compute_crc;
-	compute_crc.process_bytes(writer_.ptr() + 4,
-							  end_pos - crc_pos - 4);
-
+	compute_crc.process_bytes(writer_.ptr() + 4, end_pos - crc_pos - 4);
 	writer_.int32(static_cast<int32_t>(compute_crc()));
 	writer_.set_pos(end_pos);
 
@@ -209,9 +213,37 @@ void message_set_builder_t::reset() {
 }
 
 message_set_t message_set_builder_t::build() {
-	auto msgset_data_ = data_->clone();
-	msgset_data_->append(writer_.pos());
-	return message_set_t(std::move(msgset_data_));
+	if(compression_ == compression_codec_t::NONE) {
+		data_->append(writer_.pos() - data_->length());
+		return message_set_t(data_->clone());
+	} else if(compression_ == compression_codec_t::SNAPPY) {
+		std::string compressed;
+		snappy::Compress((char*)data_->data(), writer_.pos(), &compressed);
+
+		size_t msg_size = 4 + // crc
+						  1 + // version
+						  1 + // flags
+						  4 + // key is null
+						  4 + compressed.size(); // value
+
+		size_t full_size = 8 + // offset
+						   4 + // size
+						   msg_size;
+
+		message_set_builder_t builder(full_size);
+
+		message_t msg;
+		msg.value = compressed.data();
+		msg.value_size = compressed.size();
+		msg.flags = (int8_t)compression_codec_t::SNAPPY;
+
+		bool res = builder.append(msg);
+		assert(res);
+
+		return builder.build();
+	} else {
+		throw exception_t("unsupported compression codec: " + std::to_string((int)compression_));
+	}
 }
 
 bool message_set_builder_t::empty() const {

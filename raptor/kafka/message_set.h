@@ -26,7 +26,7 @@ protected:
 	virtual void flush();
 };
 
-enum class compression_codec_t {
+enum class compression_codec_t : int8_t {
 	NONE = 0,
 	GZIP = 1,
 	SNAPPY = 2
@@ -34,14 +34,15 @@ enum class compression_codec_t {
 
 struct message_t {
 	explicit message_t(const std::string& _value) :
-		offset(-1), key(NULL), key_size(0),
+		offset(-1), flags(0), key(NULL), key_size(0),
 		value(_value.data()), value_size(_value.size()) {}
 
 	message_t() :
-		offset(-1), key(NULL), key_size(0),
+		offset(-1), flags(0), key(NULL), key_size(0),
 		value(NULL), value_size(0) {}
 
 	int64_t offset;
+	int8_t flags;
 	char const* key;
 	int32_t key_size;
 	char const* value;
@@ -90,9 +91,8 @@ private:
 
 class message_set_builder_t {
 public:
-	explicit message_set_builder_t(size_t max_size) : max_size_(max_size) {
-		reset();
-	}
+	explicit message_set_builder_t(size_t max_size,
+		compression_codec_t codec = compression_codec_t::NONE);
 
 	message_set_t build();
 
@@ -110,6 +110,7 @@ public:
 
 private:
 	size_t max_size_;
+	compression_codec_t compression_;
 
 	std::unique_ptr<io_buff_t> data_;
 	blob_writer_t writer_;
