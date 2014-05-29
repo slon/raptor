@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 
+#include <raptor/core/time.h>
 #include <raptor/io/io_buff.h>
 
 #include <raptor/kafka/exception.h>
@@ -75,15 +76,16 @@ protected:
 	void check_wpos();
 };
 
-class bq_wire_writer_t : public wire_writer_t {
+class rt_wire_writer_t : public wire_writer_t {
 public:
-	bq_wire_writer_t(int fd, char* buff, size_t size)
+	rt_wire_writer_t(int fd, char* buff, size_t size, duration_t* timeout)
 		: wire_writer_t(buff, size), fd_(fd) {}
 
 protected:
 	virtual void flush();
 
 	int fd_;
+	duration_t* timeout_;
 };
 
 class wire_reader_t {

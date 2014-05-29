@@ -115,7 +115,7 @@ void wire_writer_t::start_array(int32_t array_size) {
 	int32(array_size);
 }
 
-void bq_wire_writer_t::flush() {
+void rt_wire_writer_t::flush() {
 	if(empty()) {
 		return;
 	}
@@ -137,7 +137,7 @@ void bq_wire_writer_t::flush() {
 		iovec_count = 2;
 	}
 
-	ssize_t res = rt_writev(fd_, iov, iovec_count, NULL);
+	ssize_t res = rt_writev(fd_, iov, iovec_count, timeout_);
 	if(res < 0) {
 		throw std::system_error(errno, std::system_category(), "rt_writev()");
 	}
