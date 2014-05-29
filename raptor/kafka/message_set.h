@@ -67,10 +67,6 @@ public:
 	void read(wire_reader_t* reader);
 	void write(wire_writer_t* writer) const;
 
-//	void validate(bool allow_compression = true);
-	message_set_t decompress();
-	message_set_t compress(compression_codec_t codec);
-
 	class iter_t {
 	public:
 		bool is_end() const;
