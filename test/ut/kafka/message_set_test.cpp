@@ -31,17 +31,6 @@ TEST(message_set_builder_t, validate) {
 
 	auto set = builder.build();
 	set.validate();
-
-	message_set_builder_t builder2(1024);
-
-	std::string msg2_value(30, 'c');
-	message_t msg2;
-	msg2.value = msg2_value.data();
-	msg2.value_size = msg2_value.size();
-	msg2.flags = (int8_t)compression_codec_t::SNAPPY;
-
-	ASSERT_TRUE(builder2.append(msg2));
-	builder2.build().validate();
 }
 
 TEST(message_set_builder_t, compression) {
@@ -51,7 +40,7 @@ TEST(message_set_builder_t, compression) {
 	ASSERT_TRUE(builder.append("5678", 4));
 
 	message_set_t msgset = builder.build();
-	msgset.validate();
+	msgset.validate(false);
 
 	auto iter = msgset.iter();
 	ASSERT_FALSE(iter.is_end());

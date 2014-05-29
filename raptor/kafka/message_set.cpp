@@ -13,6 +13,26 @@ namespace raptor { namespace kafka {
 static const int32_t MAX_MESSAGE_SET_SIZE = 16 * 1024 * 1024; // 16Mb
 static const int32_t MAX_MESSAGE_SIZE = 16 * 1024 * 1024; // 16Mb
 
+size_t message_size(message_t msg) {
+	size_t msg_size = 4 + // crc
+					  1 + // version
+					  1 + // flags
+					  4 + msg.key_size + // key
+					  4 + msg.value_size; //value
+
+	return msg_size;
+}
+
+size_t full_message_size(message_t msg) {
+	size_t msg_size = message_size(msg);
+
+	size_t full_size = 8 + // offset
+					   4 + // size
+					   msg_size;
+
+	return full_size;
+}
+
 size_t blob_writer_t::pos() const {
 	if(full_) {
 		return size_;
@@ -44,12 +64,18 @@ void blob_writer_t::flush() {
 }
 
 size_t message_set_t::wire_size() const {
-	return 4 + data_->length();
+	return 4 + data_->compute_chain_data_length();
 }
 
 void message_set_t::write(wire_writer_t* writer) const {
-	writer->int32(data_->length());
-	writer->raw((char*)data_->data(), data_->length());
+	size_t length = data_->compute_chain_data_length();
+	writer->int32(length);
+
+	io_buff_t* chunk = data_.get();
+	do {
+		writer->raw((char const*)chunk->data(), chunk->length());
+		chunk = chunk->next();
+	} while(chunk != data_.get());
 }
 
 void message_set_t::read(wire_reader_t* reader) {
@@ -57,10 +83,9 @@ void message_set_t::read(wire_reader_t* reader) {
 
 	if(size > 0) {
 		data_ = reader->raw(size);
-		validate();
+		validate(true);
 	}
 }
-
 
 void message_set_t::validate(bool decompress) {
 	wire_reader_t reader(data_.get());
@@ -99,10 +124,35 @@ void message_set_t::validate(bool decompress) {
 		int8_t compression = reader.int8();
 		if(compression != 0 && compression != (int8_t)compression_codec_t::SNAPPY) {
 			throw exception_t("unsupported compression");
-		}
+		} else if(decompress && compression == (int8_t)compression_codec_t::SNAPPY) {
+			reader.skip_bytes(); // skip key
 
-		reader.skip_bytes(); // skip key
-		reader.skip_bytes(); // skip value
+			int32_t value_size = reader.int32();
+			char const* value = reader.ptr();
+
+			size_t uncompressed_length;
+			if(!snappy::GetUncompressedLength(value, value_size, &uncompressed_length)) {
+				throw exception_t("can't get snappy uncompressed length");
+			}
+
+			std::unique_ptr<io_buff_t> uncompressed = io_buff_t::create(uncompressed_length);
+			if(!snappy::RawUncompress(value, value_size, (char*)uncompressed->writable_data())) {
+				throw exception_t("snappy uncompress failed");
+			}
+			uncompressed->append(uncompressed_length);
+
+			if(data_->length() != msgset_end) {
+				std::unique_ptr<io_buff_t> tail = data_->clone();
+				tail->trim_start(msgset_end);
+				uncompressed->append_chain(std::move(tail));
+			}
+
+			data_->trim_end(data_->length() - msg_start);
+			data_->append_chain(std::move(uncompressed));
+		} else {
+			reader.skip_bytes(); // skip key
+			reader.skip_bytes(); // skip value
+		}
 	}
 
 	// server may return incomplete part of message, we should just cut it off
@@ -110,7 +160,7 @@ void message_set_t::validate(bool decompress) {
 }
 
 bool message_set_t::iter_t::is_end() const {
-	return reader_.is_end();
+	return current_ == last_ && reader_.is_end();
 }
 
 message_t message_set_t::iter_t::next() {
@@ -138,6 +188,11 @@ message_t message_set_t::iter_t::next() {
 	msg.value = reader_.ptr();
 	reader_.skip(msg.value_size);
 
+	if(reader_.is_end() && current_ != last_) {
+		current_ = current_->next();
+		reader_ = wire_reader_t(current_);
+	}
+
 	return msg;
 }
 
@@ -162,18 +217,13 @@ bool message_set_builder_t::append(char const* value, size_t size) {
 	return append(msg);
 }
 
+
 bool message_set_builder_t::append(message_t msg) {
 	assert(msg.value != NULL);
 	assert(msg.key != NULL || msg.key_size == 0);
 
-	size_t msg_size = 4 + // crc
-					  1 + // version
-					  1 + // flags
-					  4 + msg.key_size + // key
-					  4 + msg.value_size; //value
-	size_t full_size = 8 + // offset
-					   4 + // size
-					   msg_size;
+	size_t msg_size = message_size(msg);
+	size_t full_size = full_message_size(msg);
 	if(writer_.free_space() < full_size) {
 		return false;
 	}
@@ -220,22 +270,13 @@ message_set_t message_set_builder_t::build() {
 		std::string compressed;
 		snappy::Compress((char*)data_->data(), writer_.pos(), &compressed);
 
-		size_t msg_size = 4 + // crc
-						  1 + // version
-						  1 + // flags
-						  4 + // key is null
-						  4 + compressed.size(); // value
-
-		size_t full_size = 8 + // offset
-						   4 + // size
-						   msg_size;
-
-		message_set_builder_t builder(full_size);
-
 		message_t msg;
 		msg.value = compressed.data();
 		msg.value_size = compressed.size();
 		msg.flags = (int8_t)compression_codec_t::SNAPPY;
+
+		size_t full_size = full_message_size(msg);
+		message_set_builder_t builder(full_size);
 
 		bool res = builder.append(msg);
 		assert(res);

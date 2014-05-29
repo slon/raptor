@@ -67,6 +67,10 @@ public:
 	void read(wire_reader_t* reader);
 	void write(wire_writer_t* writer) const;
 
+//	void validate(bool allow_compression = true);
+	message_set_t decompress();
+	message_set_t compress(compression_codec_t codec);
+
 	class iter_t {
 	public:
 		bool is_end() const;
@@ -74,8 +78,10 @@ public:
 
 	private:
 		iter_t(io_buff_t* buff)
-			: reader_(buff) {}
+			: current_(buff), last_(buff->prev()), reader_(current_) {}
 
+		io_buff_t* current_;
+		io_buff_t* last_;
 		wire_reader_t reader_;
 
 		friend class message_set_t;
