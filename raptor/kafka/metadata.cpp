@@ -20,7 +20,7 @@ metadata_t::metadata_t(const metadata_response_t& response) {
 			if(partition.partition_err != kafka_err_t::NO_ERROR) {
 				LOG(ERROR) << "Error in topic " << topic.name
 					<< " partition " << partition.partition_id
-					<< " '" << kafka_err_str(topic.topic_err) << "'";
+					<< " '" << kafka_err_str(partition.partition_err) << "'";
 			}
 
 			topics_[topic.name][partition.partition_id] = partition.leader;

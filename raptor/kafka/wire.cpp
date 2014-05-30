@@ -115,41 +115,41 @@ void wire_writer_t::start_array(int32_t array_size) {
     int32(array_size);
 }
 
-void bq_wire_writer_t::flush() {
-    if(empty()) {
-        return;
-    }
+void rt_wire_writer_t::flush() {
+	if(empty()) {
+		return;
+	}
 
-    iovec iov[2];
-    int iovec_count = 0;
+	iovec iov[2];
+	int iovec_count = 0;
 
-    if(rpos_ < wpos_) {
-        iov[0].iov_base = buffer_ + rpos_;
-        iov[0].iov_len = wpos_ - rpos_;
-        iovec_count = 1;
-    } else {
-        iov[0].iov_base = buffer_ + rpos_;
-        iov[0].iov_len = size_ - rpos_;
+	if(rpos_ < wpos_) {
+		iov[0].iov_base = buffer_ + rpos_;
+		iov[0].iov_len = wpos_ - rpos_;
+		iovec_count = 1;
+	} else {
+		iov[0].iov_base = buffer_ + rpos_;
+		iov[0].iov_len = size_ - rpos_;
 
-        iov[1].iov_base = buffer_;
-        iov[1].iov_len = wpos_;
+		iov[1].iov_base = buffer_;
+		iov[1].iov_len = wpos_;
 
-        iovec_count = 2;
-    }
+		iovec_count = 2;
+	}
 
-    ssize_t res = rt_writev(fd_, iov, iovec_count, NULL);
-    if(res < 0) {
-        throw std::system_error(errno, std::system_category(), "rt_writev()");
-    }
+	ssize_t res = rt_writev(fd_, iov, iovec_count, timeout_);
+	if(res < 0) {
+		throw std::system_error(errno, std::system_category(), "rt_writev()");
+	}
 
-    if(res > 0) {
-        full_ = false;
-    }
+	if(res > 0) {
+		full_ = false;
+	}
 
-    rpos_ += res;
-    if(rpos_ >= size_) {
-        rpos_ -= size_;
-    }
+	rpos_ += res;
+	if(rpos_ >= size_) {
+		rpos_ -= size_;
+	}
 }
 
 int8_t wire_reader_t::int8() {

@@ -18,10 +18,10 @@
 
 namespace raptor { namespace kafka {
 
-void recv_all(int fd, char* buff, size_t size) {
+void recv_all(int fd, char* buff, size_t size, duration_t* timeout) {
 	size_t bytes_read = 0;
 	while(bytes_read < size) {
-		ssize_t n = rt_read(fd, buff + bytes_read, size - bytes_read, NULL);
+		ssize_t n = rt_read(fd, buff + bytes_read, size - bytes_read, timeout);
 
 		if(n == 0) {
 			throw exception_t("bq_read(): connection closed");
@@ -34,10 +34,10 @@ void recv_all(int fd, char* buff, size_t size) {
 	}
 }
 
-blob_t read_blob(int fd) {
+blob_t read_blob(int fd, duration_t* timeout) {
 	int32_t blob_size;
 
-	recv_all(fd, reinterpret_cast<char*>(&blob_size), sizeof(int32_t));
+	recv_all(fd, reinterpret_cast<char*>(&blob_size), sizeof(int32_t), timeout);
 	blob_size = be32toh(blob_size);
 
 	if(blob_size > 64 * 1024 * 1024) {
@@ -45,7 +45,7 @@ blob_t read_blob(int fd) {
 	}
 
 	std::shared_ptr<char> blob(new char[blob_size], [] (char* p) { delete[] p; });
-	recv_all(fd, blob.get(), blob_size);
+	recv_all(fd, blob.get(), blob_size, timeout);
 
 	return blob_t(blob, blob_size);
 }
@@ -84,12 +84,12 @@ future_t<void> rt_link_t::send(request_ptr_t request, response_ptr_t response) {
 
 void rt_link_t::send_loop() {
 	char obuf[options.lib.obuf_size];
-	bq_wire_writer_t writer(socket.fd(), obuf, sizeof(obuf));
-
 	task_t task;
 
 	while(send_channel.get(&task)) {
 		try {
+			duration_t timeout = options.lib.link_timeout;
+			rt_wire_writer_t writer(socket.fd(), obuf, sizeof(obuf), &timeout);
 			task.request->write(&writer);
 			writer.flush_all();
 
@@ -118,7 +118,8 @@ void rt_link_t::recv_loop() {
 
 	while(recv_channel.get(&task)) {
 		try {
-			blob_t blob = read_blob(socket.fd());
+			duration_t timeout = options.lib.link_timeout;
+			blob_t blob = read_blob(socket.fd(), &timeout);
 			wire_reader_t reader(blob);
 			task.response->read(&reader);
 			task.promise.set_value();
