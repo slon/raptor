@@ -79,7 +79,7 @@ protected:
 class rt_wire_writer_t : public wire_writer_t {
 public:
 	rt_wire_writer_t(int fd, char* buff, size_t size, duration_t* timeout)
-		: wire_writer_t(buff, size), fd_(fd) {}
+		: wire_writer_t(buff, size), fd_(fd), timeout_(timeout) {}
 
 protected:
 	virtual void flush();
