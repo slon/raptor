@@ -7,6 +7,16 @@ CPPFLAGS=[
     "-fno-strict-aliasing"
 ]
 
+if ARGUMENTS.get("tsan", False):
+   env['CC'] = env['CXX'] = 'clang++-3.5'
+   env.Append(CPPFLAGS=['-fsanitize=thread'])
+   env.Append(LINKFLAGS=['-fsanitize=thread'])
+
+if ARGUMENTS.get("asan", False):
+   env['CC'] = env['CXX'] = 'clang++-3.5'
+   env.Append(CPPFLAGS=['-fsanitize=address'])
+   env.Append(LINKFLAGS=['-fsanitize=address'])
+
 env.Append(CPPPATH=["."])
 env.Append(LINKFLAGS=["-g", "-O0"])
 env.Append(CPPFLAGS=CPPFLAGS)
@@ -21,7 +31,6 @@ raptor = env.Library("libraptor.a",
 
 kafka = env.Library("libraptor_kafka.a",
                     Glob("raptor/kafka/*.cpp"))
-
 
 LIBS=[kafka, raptor, "pmetrics", "ev", "pthread", "glog", "gflags", "snappy"]
 

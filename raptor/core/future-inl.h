@@ -2,7 +2,6 @@
 
 namespace raptor {
 
-
 template<class x_t>
 struct future_traits_t {
 	template<class y_t, class fn_t>
@@ -222,21 +221,22 @@ bool future_t<x_t>::wait(duration_t* timeout) const {
 
 template<class x_t>
 template<class fn_t>
-auto future_t<x_t>::then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const {
+auto future_t<x_t>::then(fn_t&& fn) -> future_t<decltype(fn(std::declval<future_t<x_t>>()))> const {
 	return then(nullptr, fn);
 }
 
 template<class x_t>
 template<class fn_t>
-auto future_t<x_t>::then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const {
+auto future_t<x_t>::then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(std::declval<future_t<x_t>>()))> const {
 	assert(state_);
 	typedef decltype(fn(future_t<x_t>())) y_t;
 
 	promise_t<y_t> chained_promise;
 	future_t<y_t> chained_future = chained_promise.get_future();
 
-	closure_t subscriber(executor, [fn, chained_promise, state_] () mutable {
-		future_t<x_t> future(state_);
+	auto state = state_;
+	closure_t subscriber(executor, [fn, chained_promise, state] () mutable {
+		future_t<x_t> future(state);
 
 		try {
 			future_traits_t<y_t>::apply_and_set_value(&chained_promise, &future, &fn);
@@ -251,13 +251,13 @@ auto future_t<x_t>::then(executor_t* executor, fn_t&& fn) -> future_t<decltype(f
 
 template<class x_t>
 template<class fn_t>
-auto future_t<x_t>::bind(fn_t&& fn) -> decltype(fn(future_t<x_t>())) const {
+auto future_t<x_t>::bind(fn_t&& fn) -> decltype(fn(std::declval<future_t<x_t>>())) const {
 	return bind(nullptr, fn);
 }
 
 template<class x_t>
 template<class fn_t>
-auto future_t<x_t>::bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_t<x_t>())) const {
+auto future_t<x_t>::bind(executor_t* executor, fn_t&& fn) -> decltype(fn(std::declval<future_t<x_t>>())) const {
 	assert(state_);
 	typedef decltype(fn(future_t<x_t>())) result_future_t;
 	typedef typename result_future_t::value_t y_t;
@@ -271,8 +271,9 @@ auto future_t<x_t>::bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_
 		}
 	};
 
-	closure_t subscriber(executor, [fn, chained_promise, forward_handler, state_] () mutable {
-		future_t<x_t> this_future(state_);
+	auto state = state_;
+	closure_t subscriber(executor, [fn, chained_promise, forward_handler, state] () mutable {
+		future_t<x_t> this_future(state);
 
 		future_t<y_t> outer_future;
 		try {
@@ -296,8 +297,9 @@ void future_t<x_t>::subscribe(fn_t&& fn) const {
 template<class x_t>
 template<class fn_t>
 void future_t<x_t>::subscribe(executor_t* executor, fn_t&& fn) const {
-	closure_t subscriber(executor, [fn, state_] () {
-		future_t<x_t> this_future(state_);
+	auto state = state_;
+	closure_t subscriber(executor, [fn, state] () {
+		future_t<x_t> this_future(state);
 
 		try {
 			fn(this_future);

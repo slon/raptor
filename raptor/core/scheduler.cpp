@@ -18,8 +18,6 @@ scheduler_t::scheduler_t() : state_(new scheduler_state_t()) {
 }
 
 scheduler_t::~scheduler_t() { shutdown(); }
-scheduler_t::scheduler_t(scheduler_t&& other) = default;
-scheduler_t& scheduler_t::operator = (scheduler_t&& other) = default;
 
 fiber_t scheduler_t::start(std::function<void()> closure) {
 	fiber_t fiber(std::move(closure));

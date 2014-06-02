@@ -1,4 +1,5 @@
 #include <raptor/core/mutex.h>
+#include <raptor/core/fiber.h>
 
 #include "stress_test.h"
 
@@ -6,7 +7,7 @@ struct mutex_stress_test_t : public stress_test_t {
 	void run_test(int n_threads, bool jump_around, bool with_native) {
 		const int N_FIBERS = 500, N_INCS = 500, N_THREADS=4, N_THREAD_INCS = 50000;
 
-		std::vector<std::unique_ptr<fiber_impl_t>> fibers;
+		std::vector<fiber_t> fibers;
 		std::vector<std::thread> threads;
 
 		mutex_t mutex;
@@ -26,9 +27,7 @@ struct mutex_stress_test_t : public stress_test_t {
 		};
 
 		for(int i = 0; i < N_FIBERS; ++i) {
-			fibers.emplace_back(new fiber_impl_t(&lock_inc_unlock));
-
-			schedulers[i % n_threads]->activate(fibers.back().get());
+			fibers.push_back(schedulers[i % n_threads]->start(lock_inc_unlock));
 		}
 
 		if(with_native) {
@@ -42,9 +41,8 @@ struct mutex_stress_test_t : public stress_test_t {
 			}
 		}
 
-		// busy wait for termination
 		for(size_t i = 0; i < fibers.size(); ++i) {
-			while(!fibers[i]->is_terminated()) usleep(10000);
+			fibers[i].join();
 		}
 
 		for(size_t i = 0; i < threads.size(); ++i) {

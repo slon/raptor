@@ -3,10 +3,11 @@
 #include <gmock/gmock.h>
 
 #include <memory>
+#include <atomic>
 #include <vector>
 #include <thread>
 
-#include <raptor/core/impl.h>
+#include <raptor/core/scheduler.h>
 
 using namespace testing;
 using namespace raptor;
@@ -14,24 +15,21 @@ using namespace raptor;
 struct stress_test_t : public Test {
 	static const size_t N_THREADS = 4;
 
+	std::vector<scheduler_ptr_t> schedulers;
+	std::atomic<int> next_scheduler;
+
 	virtual void SetUp() {
 		for(size_t i = 0; i < N_THREADS; ++i) {
-			schedulers.emplace_back(new scheduler_impl_t());
-			auto scheduler = schedulers.back().get();
-			threads.emplace_back([scheduler] () { scheduler->run(); });
+			schedulers.push_back(std::make_shared<scheduler_t>());
 		}
 	}
 
 	virtual void TearDown() {
-		for(size_t i = 0; i < N_THREADS; ++i) {
-			schedulers[i]->break_loop();
-		}
-
-		for(size_t i = 0; i < N_THREADS; ++i) {
-			threads[i].join();
-		}
+		for(auto& s : schedulers) s->shutdown();
 	}
 
-	std::vector<std::unique_ptr<scheduler_impl_t>> schedulers;
-	std::vector<std::thread> threads;
+
+	fiber_t make_fiber(std::function<void()> c) {
+		return schedulers[next_scheduler++ % schedulers.size()]->start(c);
+	}
 };

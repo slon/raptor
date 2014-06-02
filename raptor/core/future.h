@@ -13,15 +13,6 @@ template<class x_t> class future_t;
 template<class x_t> class promise_t;
 template<class x_t> class shared_state_t;
 
-// make future from value
-template<class x_t>
-future_t<x_t> make_ready_future(const x_t& x);
-future_t<void> make_ready_future();
-
-// make future from exception
-template<class x_t>
-future_t<x_t> make_exception_future(std::exception_ptr err);
-
 // read-only result of asyncronous operation or exception describing why operation failed
 template<class x_t>
 class future_t {
@@ -55,15 +46,15 @@ public:
 
 	// non-blocking equivalent to make_ready_future(fn(*this))
 	template<class fn_t>
-	auto then(fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
+	auto then(fn_t&& fn) -> future_t<decltype(fn(std::declval<future_t<x_t>>()))> const;
 	template<class fn_t>
-	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(future_t<x_t>()))> const;
+	auto then(executor_t* executor, fn_t&& fn) -> future_t<decltype(fn(std::declval<future_t<x_t>>()))> const;
 
 	// non-blocking equivalent to this->then(fn).get()
 	template<class fn_t>
-	auto bind(fn_t&& fn) -> decltype(fn(future_t<x_t>())) const;
+	auto bind(fn_t&& fn) -> decltype(fn(std::declval<future_t<x_t>>())) const;
 	template<class fn_t>
-	auto bind(executor_t* executor, fn_t&& fn) -> decltype(fn(future_t<x_t>())) const;
+	auto bind(executor_t* executor, fn_t&& fn) -> decltype(fn(std::declval<future_t<x_t>>())) const;
 
 	template<class fn_t>
 	void subscribe(fn_t&& fn) const;
@@ -99,6 +90,15 @@ public:
 private:
 	std::shared_ptr<shared_state_t<x_t>> state_;
 };
+
+// make future from exception
+template<class x_t>
+future_t<x_t> make_exception_future(std::exception_ptr err);
+
+// make future from value
+template<class x_t>
+future_t<x_t> make_ready_future(const x_t& x);
+future_t<void> make_ready_future();
 
 } // namespace raptor
 

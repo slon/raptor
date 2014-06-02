@@ -7,6 +7,8 @@
 #include <raptor/core/scheduler.h>
 #include <raptor/core/fiber.h>
 
+#include "stress_test.h"
+
 using namespace raptor;
 
 struct ring_buffer_test_t : public ::testing::Test {
@@ -171,27 +173,7 @@ TEST(channel_test_t, close_unblocks_writer) {
 	EXPECT_FALSE(put_res);
 }
 
-struct channel_stress_test_t : public ::testing::Test {
-	virtual void SetUp() {
-		schedulers.resize(4);
-		next_scheduler = 0;
-	}
-
-	virtual void TearDown() {
-		for(size_t i = 0; i < schedulers.size(); ++i) {
-			schedulers[i].shutdown();
-		}
-	}
-
-	std::vector<scheduler_t> schedulers;
-	int next_scheduler;
-
-	fiber_t make_fiber(std::function<void()> c) {
-		return schedulers[next_scheduler++ % schedulers.size()].start(c);
-	}
-};
-
-TEST_F(channel_stress_test_t, sum) {
+TEST_F(stress_test_t, sum) {
 	int N_FIBERS = 500;
 	int N_INTS = 500;
 	std::vector<fiber_t> readers, writers;
