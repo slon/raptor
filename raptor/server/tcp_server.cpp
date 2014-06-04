@@ -18,33 +18,10 @@ tcp_server_t::tcp_server_t(scheduler_t* scheduler,
 		handler_(handler),
 		config_(config),
 		shutdown_(false) {
-	accept_socket_ = bind(port);
+	auto addr = inet_address_t::resolve_ip("localhost");
+	addr.set_port(port);
+	accept_socket_ = addr.bind();
 	accept_fiber_ = scheduler_->start(&tcp_server_t::accept_loop, this);
-}
-
-fd_guard_t bind(uint16_t port) {
-	fd_guard_t sock(socket(AF_INET, SOCK_STREAM, 0));
-
-	if(sock.fd() < 0)
-		throw std::system_error(errno, std::system_category(), "socket(): ");
-
-	rt_ctl_nonblock(sock.fd());
-
-	int i = 1;
-	if(setsockopt(sock.fd(), SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i)) < 0)
-		throw std::system_error(errno, std::system_category(), "setsockopt(): ");
-
-	struct sockaddr_in sockaddr;
-	sockaddr.sin_family = AF_INET;
-	sockaddr.sin_port = htons(port);
-	sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	if(bind(sock.fd(), (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0)
-		throw std::system_error(errno, std::system_category(), "bind(): ");
-
-	if(listen(sock.fd(), SOMAXCONN) < 0)
-		throw std::system_error(errno, std::system_category(), "listen(): ");
-
-	return std::move(sock);
 }
 
 void tcp_server_t::accept_loop() {
