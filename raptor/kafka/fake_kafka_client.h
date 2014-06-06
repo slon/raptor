@@ -20,7 +20,7 @@ public:
 
 		while(!iter.is_end()) {
 			auto msg = iter.next();
-			log_.push_back(std::string(msg.value, msg.value_size));
+			log_.emplace_back(std::string(msg.key, msg.key_size), std::string(msg.value, msg.value_size));
 		}
 
 		while(log_.size() > max_size_) {
@@ -37,8 +37,14 @@ public:
 
 		for(size_t i = 0; offset + i < start_offset_ + log_.size(); ++i) {
 			const auto& msg = log_[(offset - start_offset_) + i];
+			message_t message;
+			message.offset = offset + i;
+			message.key = msg.first.data();
+			message.key_size = msg.first.size();
+			message.value = msg.second.data();
+			message.value_size = msg.second.size();
 
-			if(!builder.append(msg.data(), msg.size()))
+			if(!builder.append(message))
 				break;
 		}
 
@@ -55,19 +61,19 @@ public:
 
 	offset_t start_offset_;
 	size_t max_size_;
-	std::deque<std::string> log_;
+	std::deque<std::pair<std::string, std::string>> log_;
 };
 
 class fake_kafka_client_t : public kafka_client_t {
 public:
 	fake_kafka_client_t(int max_log_size) : max_log_size_(max_log_size) {}
 
-	std::vector<std::string> get_full_log(const std::string& topic, partition_id_t partition) {
+	std::vector<std::pair<std::string, std::string>> get_full_log(const std::string& topic, partition_id_t partition) {
 		std::unique_lock<mutex_t> guard(mutex_);
 
 		auto log = get_log(topic, partition);
 
-		return std::vector<std::string>(log->log_.begin(), log->log_.end());
+		return std::vector<std::pair<std::string, std::string>>(log->log_.begin(), log->log_.end());
 	}
 
 	virtual future_t<offset_t> get_log_end_offset(const std::string& topic, partition_id_t partition) {
