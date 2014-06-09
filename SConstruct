@@ -1,7 +1,7 @@
 env = Environment()
 
 CPPFLAGS=[
-    "-std=c++0x", "-g", "-fPIC", "-O0",
+    "-std=c++0x", "-g", "-fPIC", "-O3",
     "-isystem", "raptor/fixinclude",
     "-isystem", "test/gmock",
     "-fno-strict-aliasing"
@@ -18,7 +18,7 @@ if ARGUMENTS.get("asan", False):
    env.Append(LINKFLAGS=['-fsanitize=address'])
 
 env.Append(CPPPATH=["."])
-env.Append(LINKFLAGS=["-g", "-O0"])
+env.Append(LINKFLAGS=["-g", "-O3"])
 env.Append(CPPFLAGS=CPPFLAGS)
 
 gmock = env.Library("libgmock.a", ["contrib/gmock/gmock-gtest-all.cc"])
