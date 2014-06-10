@@ -89,7 +89,7 @@ inet_address_t inet_address_t::parse_ip_port(const std::string& ip, const std::s
 }
 
 fd_guard_t inet_address_t::bind() {
-	fd_guard_t sock(socket(AF_INET, SOCK_STREAM, 0));
+	fd_guard_t sock(socket(ss.ss_family, SOCK_STREAM, 0));
 
 	if(sock.fd() < 0)
 		throw std::system_error(errno, std::system_category(), "socket(): ");
