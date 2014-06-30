@@ -25,8 +25,11 @@ gmock = env.Library("libgmock.a", ["contrib/gmock/gmock-gtest-all.cc"])
 gmock_main = env.Object("contrib/gmock/gmock_main.cc")
 
 raptor = env.Library("libraptor.a",
-                     Glob("raptor/core/*.cpp") + Glob("raptor/io/*.cpp") + Glob("raptor/daemon/*.cpp") +
-					 Glob("raptor/server/*.cpp") +
+                     Glob("raptor/core/*.cpp") +
+                     Glob("raptor/io/*.cpp") +
+                     Glob("raptor/daemon/*.cpp") +
+                     Glob("raptor/server/*.cpp") +
+                     Glob("raptor/client/*.cpp") +
                      ["raptor/core/context_supp.S"])
 
 kafka = env.Library("libraptor_kafka.a",

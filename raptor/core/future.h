@@ -100,6 +100,9 @@ template<class x_t>
 future_t<x_t> make_ready_future(const x_t& x);
 future_t<void> make_ready_future();
 
+template<class x_t>
+future_t<x_t> when_all(const std::vector<future_t<x_t>>& futures);
+
 } // namespace raptor
 
 #include <raptor/core/future-inl.h>
