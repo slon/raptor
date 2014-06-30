@@ -8,12 +8,13 @@ Build-Depends: debhelper (>= 8.0.0),
 			   libgflags-dev,
 			   libgoogle-glog-dev,
 			   yabs-gmock-dev,
-			   libpmetrics-dev
+			   libpmetrics-dev,
+               libsnappy-dev
 Standards-Version: 3.9.2
 
 Package: libraptor-dev
 Architecture: amd64
-Depends: libboost-dev, libev-dev, libgflags-dev, libgoogle-glog-dev, libpmetrics-dev
+Depends: libboost-dev, libev-dev, libgflags-dev, libgoogle-glog-dev, libpmetrics-dev, libsnappy-dev
 Description: Fibers library
 
 Package: libraptor-kafka-dev
