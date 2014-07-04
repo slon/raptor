@@ -22,7 +22,7 @@ private:
 	fiber_t(std::function<void()> task);
 	fiber_impl_t* get_impl();
 
-	friend class scheduler_t;
+	friend class single_threaded_scheduler_t;
 
 	std::shared_ptr<fiber_state_t> state_;
 };

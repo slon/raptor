@@ -6,38 +6,42 @@
 
 namespace raptor {
 
-struct scheduler_state_t {
-	std::thread thread;
-	scheduler_impl_t impl;
+class single_threaded_scheduler_t : public scheduler_t {
+public:
+	single_threaded_scheduler_t() {
+		thread_ = std::thread([this] () {
+			impl_.run();
+		});
+	}
+
+	virtual ~single_threaded_scheduler_t() {
+		shutdown();
+	}
+
+	virtual fiber_t start(std::function<void()> closure) {
+		fiber_t fiber(std::move(closure));
+		impl_.activate(fiber.get_impl());
+		return fiber;
+	}
+
+	virtual void switch_to() {
+		impl_.switch_to();
+	}
+
+	virtual void shutdown() {
+		if(thread_.joinable()) {
+			impl_.break_loop();
+			thread_.join();
+		}
+	}
+
+private:
+	std::thread thread_;
+	scheduler_impl_t impl_;
 };
 
-scheduler_t::scheduler_t() : state_(new scheduler_state_t()) {
-	state_->thread = std::thread([this] () {
-		state_->impl.run();
-	});
-}
-
-scheduler_t::~scheduler_t() { shutdown(); }
-
-fiber_t scheduler_t::start(std::function<void()> closure) {
-	fiber_t fiber(std::move(closure));
-	state_->impl.activate(fiber.get_impl());
-	return fiber;
-}
-
-void scheduler_t::switch_to() {
-	state_->impl.switch_to();
-}
-
-void scheduler_t::shutdown() {
-	if(state_->thread.joinable()) {
-		state_->impl.break_loop();
-		state_->thread.join();
-	}
-}
-
 scheduler_ptr_t make_scheduler(const std::string& name) {
-	return std::make_shared<scheduler_t>();
+	return std::make_shared<single_threaded_scheduler_t>();
 }
 
 } // namespace raptor
