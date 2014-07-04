@@ -10,7 +10,7 @@
 
 namespace raptor {
 
-graphite_reporter_t::graphite_reporter_t(scheduler_t* scheduler) :
+graphite_reporter_t::graphite_reporter_t(scheduler_ptr_t scheduler) :
 	periodic_(scheduler, std::chrono::minutes(1), std::bind(&graphite_reporter_t::send_metrics, this)) {}
 
 void graphite_reporter_t::send_metrics() {

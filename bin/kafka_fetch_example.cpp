@@ -26,11 +26,11 @@ int main(int argc, char* argv[]) {
 
 	setup_raptor();
 
-	scheduler_t scheduler;
+	auto scheduler = make_scheduler();
 
 	options_t options;
 
-	rt_kafka_client_t client(&scheduler, parse_broker_list(FLAGS_broker_list), options);
+	rt_kafka_client_t client(scheduler.get(), parse_broker_list(FLAGS_broker_list), options);
 
 	try {
 		// start async request

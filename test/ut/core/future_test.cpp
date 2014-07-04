@@ -27,13 +27,13 @@ TEST(future_test_t, make_exception_future) {
 }
 
 TEST(future_test_t, future_value_block) {
-	scheduler_t s;
+	auto s = make_scheduler();
 
 	promise_t<int> p;
 	future_t<int> fu = p.get_future();
 
 	int res = -1;
-	fiber_t f = s.start([&] () {
+	fiber_t f = s->start([&] () {
 		res = fu.get();
 	});
 
@@ -45,7 +45,6 @@ TEST(future_test_t, future_value_block) {
 
 	p.set_value(1);
 	f.join();
-	s.shutdown();
 
 	EXPECT_TRUE(fu.is_ready());
 	EXPECT_TRUE(fu.has_value());
@@ -55,13 +54,13 @@ TEST(future_test_t, future_value_block) {
 }
 
 TEST(future_test_t, future_exception_block) {
-	scheduler_t s;
+	auto s = make_scheduler();
 
 	promise_t<int> p;
 	future_t<int> fu = p.get_future();
 
 	bool exception = false;
-	fiber_t f = s.start([&] () {
+	fiber_t f = s->start([&] () {
 		try {
 			fu.get();
 		} catch(const std::runtime_error&) {
@@ -77,7 +76,6 @@ TEST(future_test_t, future_exception_block) {
 
 	p.set_exception(std::make_exception_ptr(std::runtime_error("very bad")));
 	f.join();
-	s.shutdown();
 
 	EXPECT_TRUE(fu.is_ready());
 	EXPECT_FALSE(fu.has_value());

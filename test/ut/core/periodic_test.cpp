@@ -5,16 +5,17 @@
 using namespace raptor;
 
 TEST(periodic_test_t, simple) {
-	scheduler_t s;
-	periodic_t p(&s, std::chrono::milliseconds(50), [] () {});
+	auto s = make_scheduler();
+
+	periodic_t p(s, std::chrono::milliseconds(50), [] () {});
 }
 
 TEST(periodic_test_t, runned) {
-	scheduler_t s;
+	auto s = make_scheduler();
 
 	std::atomic<bool> runned(false);
 
-	periodic_t p(&s, std::chrono::milliseconds(50), [&runned] () {
+	periodic_t p(s, std::chrono::milliseconds(50), [&runned] () {
 		runned = true;
 	});
 
@@ -24,8 +25,9 @@ TEST(periodic_test_t, runned) {
 }
 
 TEST(periodic_test_t, ok_to_throw) {
-	scheduler_t s;
-	periodic_t p(&s, std::chrono::milliseconds(50), [] () {
+	auto s = make_scheduler();
+
+	periodic_t p(s, std::chrono::milliseconds(50), [] () {
 		throw std::runtime_error("foo");
 	});
 

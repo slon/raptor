@@ -36,4 +36,8 @@ void scheduler_t::shutdown() {
 	}
 }
 
+scheduler_ptr_t make_scheduler(const std::string& name) {
+	return std::make_shared<scheduler_t>();
+}
+
 } // namespace raptor

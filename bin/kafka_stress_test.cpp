@@ -58,12 +58,12 @@ int main(int argc, char* argv[]) {
 	google::ParseCommandLineFlags(&argc, &argv, true);
 	setup_raptor();
 
-	scheduler_t scheduler;
+	auto scheduler = make_scheduler();
 
 	std::vector<fiber_t> clients;
 
 	for(int i = 0; i < FLAGS_n_clients; ++i) {
-		clients.push_back(scheduler.start(run_client, &scheduler));
+		clients.push_back(scheduler->start(run_client, scheduler.get()));
 	}
 
 	for(size_t i = 0; i < 1000; ++i) {

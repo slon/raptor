@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	google::ParseCommandLineFlags(&argc, &argv, true);
 	setup_raptor();
 
-	scheduler_t scheduler;
+	auto scheduler = make_scheduler();
 
 	options_t opts;
 
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	auto request = std::make_shared<metadata_request_t>();
 	auto response = std::make_shared<metadata_response_t>();
 
-	link.start(&scheduler);
+	link.start(scheduler.get());
 	link.send(request, response).get();
 
 	std::cout << *response;

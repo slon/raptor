@@ -65,11 +65,11 @@ TEST(channel_test_t, put_get_without_blocking) {
 
 TEST(channel_test_t, get_blocks) {
 	channel_t<int> channel(1);
-	scheduler_t sched;
+	auto sched = make_scheduler();
 
 	bool get_res;
 	int get_val = -1;
-	fiber_t fiber = sched.start([&] () {
+	fiber_t fiber = sched->start([&] () {
 		get_res = channel.get(&get_val);
 	});
 
@@ -80,8 +80,6 @@ TEST(channel_test_t, get_blocks) {
 	fiber.join();
 	EXPECT_EQ(10, get_val);
 	EXPECT_EQ(true, get_res);
-
-	sched.shutdown();
 }
 
 TEST(channel_test_t, put_blocks) {
@@ -90,11 +88,11 @@ TEST(channel_test_t, put_blocks) {
 	EXPECT_TRUE(channel.put(2));
 	EXPECT_TRUE(channel.put(3));
 
-	scheduler_t sched;
+	auto sched = make_scheduler();
 
 	bool put_res;
 	bool blocked = true;
-	fiber_t fiber = sched.start([&] () {
+	fiber_t fiber = sched->start([&] () {
 		put_res = channel.put(4);
 		blocked = false;
 	});
@@ -107,7 +105,6 @@ TEST(channel_test_t, put_blocks) {
 	EXPECT_EQ(1, i);
 
 	fiber.join();
-	sched.shutdown();
 
 	EXPECT_FALSE(blocked);
 	EXPECT_TRUE(put_res);
@@ -139,10 +136,10 @@ TEST(channel_test_t, closed) {
 
 TEST(channel_test_t, close_unblocks_reader) {
 	channel_t<int> channel(1);
-	scheduler_t sched;
+	auto sched = make_scheduler();;
 
 	bool get_res;
-	fiber_t fiber = sched.start([&] () {
+	fiber_t fiber = sched->start([&] () {
 		int i;
 		get_res = channel.get(&i);
 	});
@@ -150,25 +147,23 @@ TEST(channel_test_t, close_unblocks_reader) {
 	usleep(100);
 	channel.close();
 	fiber.join();
-	sched.shutdown();
 
 	EXPECT_FALSE(get_res);
 }
 
 TEST(channel_test_t, close_unblocks_writer) {
 	channel_t<int> channel(1);
-	scheduler_t sched;
+	auto sched = make_scheduler();
 	channel.put(1);
 
 	bool put_res;
-	fiber_t fiber = sched.start([&] () {
+	fiber_t fiber = sched->start([&] () {
 		put_res = channel.put(2);
 	});
 
 	usleep(10000);
 	channel.close();
 	fiber.join();
-	sched.shutdown();
 
 	EXPECT_FALSE(put_res);
 }

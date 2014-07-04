@@ -6,7 +6,7 @@
 
 namespace raptor {
 
-periodic_t::periodic_t(scheduler_t* scheduler, duration_t interval, std::function<void()> task) :
+periodic_t::periodic_t(scheduler_ptr_t scheduler, duration_t interval, std::function<void()> task) :
 	loop_fiber_(scheduler->start(&periodic_t::loop, this, interval, task)) {}
 
 void periodic_t::shutdown() {

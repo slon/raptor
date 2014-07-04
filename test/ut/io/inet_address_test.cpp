@@ -82,9 +82,9 @@ TEST(socket_test_t, normal_connect) {
 }
 
 TEST(socket_test_t, connect_timeout) {
-	scheduler_t s;
+	auto s = make_scheduler();
 
-	s.start([] () {
+	s->start([] () {
 		auto address = inet_address_t::parse_ip_port("127.0.0.1", "29853");
 
 		auto listening_socket = address.bind();

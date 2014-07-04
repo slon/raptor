@@ -9,8 +9,9 @@ using namespace raptor;
 TEST(graphite_reporter_test_t, test) {
 	pm::counter_t c = pm::get_root().counter("counter");
 
-	scheduler_t s;
-	graphite_reporter_t reporter(&s);
+	auto s = make_scheduler();
+
+	graphite_reporter_t reporter(s);
 
 	usleep(10000);
 }

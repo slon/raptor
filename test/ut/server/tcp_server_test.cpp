@@ -11,14 +11,14 @@ TEST(sockaddr, test) {
 }
 
 TEST(tcp_server_test_t, simple_bind) {
-	scheduler_t scheduler;
+	auto s = make_scheduler();
 
-	tcp_server_t server(&scheduler, nullptr, 9999);
+	tcp_server_t server(s.get(), nullptr, 9999);
 }
 
 TEST(tcp_server_test_t, bind_on_used_port) {
-	scheduler_t scheduler;
+	auto s = make_scheduler();
 
-	tcp_server_t server(&scheduler, nullptr, 9999);
-	ASSERT_THROW(tcp_server_t(&scheduler, nullptr, 9999), std::runtime_error);
+	tcp_server_t server(s.get(), nullptr, 9999);
+	ASSERT_THROW(tcp_server_t(s.get(), nullptr, 9999), std::runtime_error);
 }

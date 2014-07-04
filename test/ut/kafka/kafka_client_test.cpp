@@ -7,9 +7,9 @@ using namespace raptor;
 using namespace raptor::kafka;
 
 TEST(kafka_test_t, DISABLED_shutdown) {
-	scheduler_t s;
+	auto s = make_scheduler();
 	options_t opts;
-	rt_kafka_client_t client(&s, parse_broker_list("localhost:19341"), opts);
+	rt_kafka_client_t client(s.get(), parse_broker_list("localhost:19341"), opts);
 
 	auto offset = client.get_log_start_offset("test", 0);
 }

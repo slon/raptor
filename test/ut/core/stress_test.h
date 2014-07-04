@@ -20,7 +20,7 @@ struct stress_test_t : public Test {
 
 	virtual void SetUp() {
 		for(size_t i = 0; i < N_THREADS; ++i) {
-			schedulers.push_back(std::make_shared<scheduler_t>());
+			schedulers.push_back(make_scheduler("s" + std::to_string(i)));
 		}
 	}
 

@@ -10,6 +10,12 @@ namespace raptor {
 
 struct scheduler_state_t;
 
+class scheduler_t;
+
+typedef std::shared_ptr<scheduler_t> scheduler_ptr_t;
+
+scheduler_ptr_t make_scheduler(const std::string& name = "default");
+
 class scheduler_t : public no_copy_or_move_t {
 public:
 	scheduler_t();
@@ -30,7 +36,5 @@ public:
 private:
 	std::unique_ptr<scheduler_state_t> state_;
 };
-
-typedef std::shared_ptr<scheduler_t> scheduler_ptr_t;
 
 } // namespace raptor

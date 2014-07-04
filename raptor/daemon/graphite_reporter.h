@@ -9,7 +9,7 @@ void replace(std::string* str, char from, char to);
 
 class graphite_reporter_t {
 public:
-	graphite_reporter_t(scheduler_t* scheduler);
+	graphite_reporter_t(scheduler_ptr_t scheduler);
 
 	~graphite_reporter_t() { shutdown(); }
 
