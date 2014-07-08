@@ -114,11 +114,11 @@ typedef std::shared_ptr<produce_request_t> produce_request_ptr_t;
 class offset_request_t : public request_t {
 public:
 	offset_request_t(
-			const std::string topic, int32_t partition_id,
+			const std::string topic, int32_t partition,
 			int64_t time, int32_t max_number_of_offsets) :
 		request_t(api_key_t::OFFSET_REQUEST),
 		topic(topic),
-		partition_id(partition_id),
+		partition(partition),
 		time(time),
 		max_number_of_offsets(max_number_of_offsets) {}
 
@@ -126,7 +126,7 @@ public:
 	virtual void write_body(wire_writer_t* writer) const;
 
 	const std::string topic;
-	const int32_t partition_id;
+	const int32_t partition;
 	const int64_t time;
 	const int32_t max_number_of_offsets;
 };

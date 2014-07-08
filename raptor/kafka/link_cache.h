@@ -15,6 +15,8 @@ class link_cache_t {
 public:
 	virtual ~link_cache_t() {}
 
+	virtual void shutdown() = 0;
+
 	virtual future_t<link_ptr_t> connect(const broker_addr_t& addr) = 0;
 };
 
@@ -23,6 +25,8 @@ public:
 	rt_link_cache_t(scheduler_t* scheduler, const options_t& options) : scheduler_(scheduler), options_(options) {}
 
 	virtual future_t<link_ptr_t> connect(const broker_addr_t& addr);
+
+	virtual void shutdown();
 
 private:
 	scheduler_t* scheduler_;

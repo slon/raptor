@@ -38,17 +38,34 @@ public:
 		const std::string& topic, partition_id_t partition, message_set_t message_set
 	);
 
+	virtual void shutdown();
+
 private:
 	options_t options;
 	pm::timer_t rpc_timer;
-	pm::meter_t error_meter;
+	pm::meter_t network_error_meter, server_error_meter;
 
-	std::unique_ptr<network_t> network;
+	std::shared_ptr<network_t> network;
 
 	future_t<void> send(
 		const std::string& topic, partition_id_t partition,
 		request_ptr_t request, response_ptr_t response
 	);
+
+	template<class request_ptr_t, class response_ptr_t>
+	void check_response(char const* name, request_ptr_t request, response_ptr_t response, future_t<void> request_completed) {
+		if(request_completed.has_exception()) {
+			network_error_meter.mark();
+			network->refresh_metadata();
+			request_completed.get();
+		}
+
+		if(response->err != kafka_err_t::NO_ERROR) {
+			server_error_meter.mark();
+			network->refresh_metadata();
+			throw_kafka_err(name, response->err, request->topic, request->partition);
+		}
+	}
 };
 
 }} // namespace raptor::kafka

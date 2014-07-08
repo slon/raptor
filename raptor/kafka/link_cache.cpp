@@ -8,6 +8,10 @@
 
 namespace raptor { namespace kafka {
 
+void rt_link_cache_t::shutdown() {
+	active_links_.clear();
+}
+
 future_t<link_ptr_t> rt_link_cache_t::connect(const broker_addr_t& addr) {
 	std::lock_guard<mutex_t> guard(mutex_);
 

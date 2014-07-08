@@ -10,7 +10,7 @@
 
 namespace raptor { namespace kafka {
 
-class kafka_client_t {
+class kafka_client_t : public std::enable_shared_from_this<kafka_client_t> {
 public:
 	virtual future_t<offset_t> get_log_end_offset(
 		const std::string& topic, partition_id_t partition
@@ -27,6 +27,8 @@ public:
 	virtual future_t<void> produce(
 		const std::string& topic, partition_id_t partition, message_set_t msg_set
 	) = 0;
+
+	virtual void shutdown() = 0;
 };
 
 }} // namespace raptor::kafka

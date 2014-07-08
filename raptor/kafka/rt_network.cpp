@@ -12,25 +12,35 @@ namespace raptor { namespace kafka {
 rt_network_t::rt_network_t(
 		scheduler_t* scheduler,	std::unique_ptr<link_cache_t> link_cache,
 		const options_t& options, const broker_list_t& bootstrap_brokers
-) : scheduler_(scheduler), link_cache_(std::move(link_cache)), options_(options), bootstrap_brokers_(bootstrap_brokers) {
-	refresh_metadata();
-}
+) : scheduler_(scheduler),
+	link_cache_(std::move(link_cache)),
+	options_(options),
+	is_shutting_down_(false),
+	bootstrap_brokers_(bootstrap_brokers) {}
 
 void rt_network_t::shutdown() {
 	std::unique_lock<spinlock_t> guard(metadata_lock_);
-	metadata_refresher_.join();
+	auto refresher = metadata_refresher_;
+	is_shutting_down_ = true;
+	guard.unlock();
+
+	refresher.join();
+	link_cache_->shutdown();
 }
 
 void rt_network_t::refresh_metadata() {
 	std::unique_lock<spinlock_t> guard(metadata_lock_);
 
-	// if another refresh is in flight, do nothing
+	if(is_shutting_down_) return;
+
+	// if another refresh is in flight - do nothing
 	if(metadata_.is_valid() && !metadata_.is_ready()) return;
 
 	promise_t<metadata_t> metadata_promise;
 	metadata_ = metadata_promise.get_future();
 
-	metadata_refresher_ = scheduler_->start([metadata_promise, this] () mutable {
+	auto that = shared_from_this();
+	metadata_refresher_ = scheduler_->start([metadata_promise, this, that] () mutable {
 		try {
 			duration_t backoff = options_.lib.metadata_refresh_backoff;
 			rt_sleep(&backoff);
@@ -52,7 +62,15 @@ void rt_network_t::refresh_metadata() {
 
 future_t<metadata_t> rt_network_t::get_metadata() {
 	std::unique_lock<spinlock_t> guard(metadata_lock_);
-	return metadata_;
+	if(is_shutting_down_) {
+		return make_exception_future<metadata_t>(
+			std::make_exception_ptr(
+				std::runtime_error("rt_network_t shutting down")
+			)
+		);
+	} else {
+		return metadata_;
+	}
 }
 
 const broker_addr_t& rt_network_t::get_next_bootstrap_broker() {
@@ -60,7 +78,8 @@ const broker_addr_t& rt_network_t::get_next_bootstrap_broker() {
 }
 
 future_t<link_ptr_t> rt_network_t::get_link(const std::string& topic, partition_id_t partition) {
-	return get_metadata().bind([this, topic, partition] (future_t<metadata_t> metadata) {
+	auto that = shared_from_this();
+	return get_metadata().bind([this, that, topic, partition] (future_t<metadata_t> metadata) {
 		auto host_port = metadata.get().get_partition_leader_addr(topic, partition);
 
 		return link_cache_->connect(host_port);

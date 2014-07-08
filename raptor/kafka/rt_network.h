@@ -23,20 +23,20 @@ public:
 		const broker_list_t& bootstrap_brokers
 	);
 
-	~rt_network_t() { shutdown(); }
-	void shutdown();
+	virtual void shutdown();
 
 	virtual void refresh_metadata();
 	virtual future_t<link_ptr_t> get_link(const std::string& topic, partition_id_t partition);
 
 private:
 	scheduler_t* scheduler_;
-	const std::unique_ptr<link_cache_t> link_cache_;
+	std::unique_ptr<link_cache_t> link_cache_;
 	const options_t options_;
 
 	spinlock_t metadata_lock_;
 	future_t<metadata_t> metadata_;
 	fiber_t metadata_refresher_;
+	bool is_shutting_down_;
 	future_t<metadata_t> get_metadata();
 
 	std::atomic<size_t> next_bootstrap_broker_;

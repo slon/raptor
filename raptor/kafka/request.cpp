@@ -103,7 +103,7 @@ void offset_request_t::write_body(wire_writer_t* writer) const {
 	writer->string(topic); // topic
 
 	writer->start_array(1); // partition_array
-	writer->int32(partition_id); // partition_id
+	writer->int32(partition); // partition_id
 	writer->int64(time); // time
 	writer->int32(max_number_of_offsets); // max number of offsets
 }
