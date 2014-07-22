@@ -80,7 +80,7 @@ public:
 	}
 
 	fd_guard_t bind();
-	fd_guard_t connect(duration_t* timeout = nullptr);
+	fd_guard_t connect(duration_t* timeout);
 };
 
 } // namespace raptor

@@ -7,6 +7,7 @@
 
 namespace raptor {
 
-void write_all(int fd, char const* data, size_t size, duration_t* timeout = NULL);
+void write_all(int fd, char const* data, size_t size, duration_t* timeout);
+void read_all(int fd, char* buff, size_t size, duration_t* timeout);
 
 } // namespace raptor

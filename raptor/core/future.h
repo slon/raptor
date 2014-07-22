@@ -87,6 +87,10 @@ public:
 	// set exception of the associated future
 	void set_exception(std::exception_ptr err);
 
+	// set exception of the associated future
+	template<class e_t>
+	void set_exception(const e_t& e);
+
 private:
 	std::shared_ptr<shared_state_t<x_t>> state_;
 };

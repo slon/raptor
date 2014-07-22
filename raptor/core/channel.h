@@ -45,13 +45,18 @@ private:
 template<class x_t>
 class channel_t {
 public:
-	channel_t(size_t size) : buffer_(size), not_empty_(&lock_), not_full_(&lock_), is_closed_(false) {}
+	channel_t(size_t size) :
+		buffer_(size),
+		readers_(&lock_),
+		writers_(&lock_),
+		is_closed_(false),
+		wake_up_reader_(false) {}
 
 	bool put(const x_t& x) {
 		std::lock_guard<spinlock_t> guard(lock_);
 
 		while(!(is_closed_ || buffer_.try_put(x))) {
-			not_full_.wait(nullptr);
+			writers_.wait(nullptr);
 		}
 
 		notify_next();
@@ -63,13 +68,21 @@ public:
 		std::lock_guard<spinlock_t> guard(lock_);
 
 		bool get_successful = false;
-		while(!(get_successful = buffer_.try_get(x)) && !is_closed_) {
-			not_empty_.wait(nullptr);
+		while(!(get_successful = buffer_.try_get(x)) && !is_closed_ && !wake_up_reader_) {
+			readers_.wait(nullptr);
 		}
+
+		if(wake_up_reader_) wake_up_reader_ = false;
 
 		notify_next();
 
 		return get_successful;
+	}
+
+	void wake_up_reader() {
+		std::lock_guard<spinlock_t> guard(lock_);
+		wake_up_reader_ = true;
+		readers_.notify_one();
 	}
 
 	bool is_closed() {
@@ -87,18 +100,19 @@ private:
 	spinlock_t lock_;
 	ring_buffer_t<x_t> buffer_;
 
-	wait_queue_t not_empty_;
-	wait_queue_t not_full_;
+	wait_queue_t readers_;
+	wait_queue_t writers_;
 
 	bool is_closed_;
+	bool wake_up_reader_;
 
 	void notify_next() {
 		if(is_closed_ || !buffer_.is_empty()) {
-			not_empty_.notify_one();
+			readers_.notify_one();
 		}
 
 		if(is_closed_ || !buffer_.is_full()) {
-			not_full_.notify_one();
+			writers_.notify_one();
 		}
 	}
 };

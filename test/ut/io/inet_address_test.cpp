@@ -75,7 +75,7 @@ TEST(socket_test_t, normal_connect) {
 
 	auto server_socket = address.bind();
 
-	auto client_socket1 = address.connect();
+	auto client_socket1 = address.connect(nullptr);
 
 	duration_t timeout(0.1);
 	auto client_socket2 = address.connect(&timeout);

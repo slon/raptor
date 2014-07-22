@@ -336,6 +336,12 @@ void promise_t<x_t>::set_exception(std::exception_ptr err) {
 }
 
 template<class x_t>
+template<class e_t>
+void promise_t<x_t>::set_exception(const e_t& err) {
+	state_->set_exception(std::make_exception_ptr(err));
+}
+
+template<class x_t>
 future_t<x_t> make_ready_future(const x_t& x) {
 	promise_t<x_t> promise;
 	promise.set_value(x);

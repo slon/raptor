@@ -4,12 +4,19 @@
 #include <cassert>
 #include <iostream>
 
-#include <raptor/io/io_buff.h>
+#include <gmock/gmock.h>
 
+#include <raptor/core/future.h>
+#include <raptor/core/scheduler.h>
+#include <raptor/client/bus.h>
+#include <raptor/io/io_buff.h>
 #include <raptor/kafka/wire.h>
+#include <raptor/kafka/kafka_cluster.h>
+#include <raptor/kafka/kafka_client.h>
 
 using namespace raptor;
 using namespace raptor::kafka;
+using namespace ::testing;
 
 inline char to_16(char c) {
 	return (c < 10) ? (c + '0') : (c - 10 + 'A');
@@ -76,5 +83,31 @@ struct mock_writer_t : public wire_writer_t {
 
 		wpos_ = 0;
 		full_ = false;
+	}
+};
+
+struct mock_kafka_network_t : public kafka_network_t {
+	MOCK_METHOD2(send, void(const broker_addr_t&, kafka_rpc_t));
+	MOCK_METHOD0(shutdown, void());
+};
+
+class mock_kafka_client_t : public kafka_client_t {
+	MOCK_METHOD2(get_log_end_offset, future_t<offset_t>(const std::string&, partition_id_t));
+	MOCK_METHOD2(get_log_start_offset, future_t<offset_t>(const std::string&, partition_id_t));
+	MOCK_METHOD3(fetch, future_t<message_set_t>(const std::string&, partition_id_t, offset_t));
+	MOCK_METHOD3(produce, future_t<void>(const std::string&, partition_id_t, message_set_t));
+};
+
+class kafka_test_t : public ::testing::Test {
+public:
+	options_t options;
+	scheduler_ptr_t scheduler;
+
+	void SetUp() {
+		scheduler = make_scheduler();
+	}
+
+	void TearDown() {
+		scheduler->shutdown();
 	}
 };

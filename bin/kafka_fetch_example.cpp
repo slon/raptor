@@ -5,7 +5,7 @@
 #include <raptor/core/scheduler.h>
 
 // for rt_kafka_client_t
-#include <raptor/kafka/rt_kafka_client.h>
+#include <raptor/kafka/kafka_client.h>
 
 // for options_t and parse_broker_list()
 #include <raptor/kafka/options.h>
@@ -30,11 +30,11 @@ int main(int argc, char* argv[]) {
 
 	options_t options;
 
-	rt_kafka_client_t client(scheduler.get(), parse_broker_list(FLAGS_broker_list), options);
+	auto client = make_kafka_client(scheduler, parse_broker_list(FLAGS_broker_list), options);
 
 	try {
 		// start async request
-		future_t<message_set_t> request = client.fetch(FLAGS_topic, FLAGS_partition, FLAGS_offset);
+		future_t<message_set_t> request = client->fetch(FLAGS_topic, FLAGS_partition, FLAGS_offset);
 
 		// wait for request to finish
 		message_set_t msgset = request.get();

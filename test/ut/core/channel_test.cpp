@@ -134,6 +134,24 @@ TEST(channel_test_t, closed) {
 	EXPECT_FALSE(channel.get(&i));
 }
 
+TEST(channel_test_t, wake_up_reader) {
+	auto sched = make_scheduler();
+
+	channel_t<int> channel(1);
+
+	bool get_res;
+	fiber_t fiber = sched->start([&] () {
+		int i;
+		get_res = channel.get(&i);
+	});
+
+	usleep(100);
+	channel.wake_up_reader();
+	fiber.join();
+
+	EXPECT_FALSE(get_res);
+}
+
 TEST(channel_test_t, close_unblocks_reader) {
 	channel_t<int> channel(1);
 	auto sched = make_scheduler();;

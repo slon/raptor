@@ -78,7 +78,6 @@ struct options_t {
     } kafka;
 
     struct library_t {
-        duration_t socket_timeout;
         int so_rcvbuf;
         int so_sndbuf;
 

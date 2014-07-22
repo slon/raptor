@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mock.h"
+#include "common.h"
 
 using namespace raptor::kafka;
 

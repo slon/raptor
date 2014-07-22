@@ -58,17 +58,28 @@ protected:
 
 typedef std::shared_ptr<metadata_request_t> metadata_request_ptr_t;
 
-class fetch_request_t : public request_t {
+class topic_request_t : public request_t {
+public:
+	topic_request_t(api_key_t key, const std::string& topic, partition_id_t partition) :
+		request_t(key),
+		topic(topic),
+		partition(partition) {}
+
+	const std::string topic;
+	const partition_id_t partition;
+};
+
+typedef std::shared_ptr<topic_request_t> topic_request_ptr_t;
+
+class fetch_request_t : public topic_request_t {
 public:
 	fetch_request_t(
 			int32_t max_wait_time, int32_t min_bytes,
 			const std::string& topic, partition_id_t partition, offset_t offset,
 			int32_t max_bytes) :
-		request_t(api_key_t::FETCH_REQUEST),
+		topic_request_t(api_key_t::FETCH_REQUEST, topic, partition),
 		max_wait_time(max_wait_time),
 		min_bytes(min_bytes),
-		topic(topic),
-		partition(partition),
 		offset(offset),
 		max_bytes(max_bytes) {}
 
@@ -78,25 +89,21 @@ public:
 	const int32_t max_wait_time;
 	const int32_t min_bytes;
 
-	const std::string topic;
-	const partition_id_t partition;
 	const offset_t offset;
 	const int32_t max_bytes;
 };
 
 typedef std::shared_ptr<fetch_request_t> fetch_request_ptr_t;
 
-class produce_request_t : public request_t {
+class produce_request_t : public topic_request_t {
 public:
 	produce_request_t(
 			int16_t required_acks, int32_t timeout,
 			const std::string& topic, int32_t partition,
 			message_set_t message_set) :
-		request_t(api_key_t::PRODUCE_REQUEST),
+		topic_request_t(api_key_t::PRODUCE_REQUEST, topic, partition),
 		required_acks(required_acks),
 		timeout(timeout),
-		topic(topic),
-		partition(partition),
 		message_set(message_set) {}
 
 	virtual int32_t body_size() const;
@@ -104,29 +111,23 @@ public:
 
 	const int16_t required_acks;
 	const int32_t timeout;
-	const std::string topic;
-	const int32_t partition;
 	const message_set_t message_set;
 };
 
 typedef std::shared_ptr<produce_request_t> produce_request_ptr_t;
 
-class offset_request_t : public request_t {
+class offset_request_t : public topic_request_t {
 public:
 	offset_request_t(
 			const std::string topic, int32_t partition,
 			int64_t time, int32_t max_number_of_offsets) :
-		request_t(api_key_t::OFFSET_REQUEST),
-		topic(topic),
-		partition(partition),
+		topic_request_t(api_key_t::OFFSET_REQUEST, topic, partition),
 		time(time),
 		max_number_of_offsets(max_number_of_offsets) {}
 
 	virtual int32_t body_size() const;
 	virtual void write_body(wire_writer_t* writer) const;
 
-	const std::string topic;
-	const int32_t partition;
 	const int64_t time;
 	const int32_t max_number_of_offsets;
 };

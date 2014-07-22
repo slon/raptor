@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mock.h"
+#include "common.h"
 
 void check(mock_writer_t* writer, const std::string& hex) {
 	writer->flush_all();

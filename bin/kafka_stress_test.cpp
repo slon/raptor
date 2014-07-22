@@ -6,7 +6,7 @@
 #include <raptor/core/scheduler.h>
 #include <raptor/core/syscall.h>
 #include <raptor/daemon/daemon.h>
-#include <raptor/kafka/rt_kafka_client.h>
+#include <raptor/kafka/kafka_client.h>
 
 using namespace raptor;
 using namespace raptor::kafka;
@@ -22,23 +22,23 @@ DEFINE_int32(sleep_ms, 50, "sleep interval between produce rpc in single partiti
 
 std::atomic<size_t> TOTAL_BYTES_PRODUCED(0);
 
-void run_client(scheduler_t* scheduler) {
+void run_client(scheduler_ptr_t scheduler) {
 	options_t options;
 
 	options.lib.metadata_refresh_backoff = std::chrono::milliseconds(1);
 
-	rt_kafka_client_t client(scheduler, parse_broker_list(FLAGS_broker_list), options);
+	auto client = make_kafka_client(scheduler, parse_broker_list(FLAGS_broker_list), options);
 
 	std::string message(FLAGS_msg_size, 'f');
 
 	std::vector<fiber_t> fibers;
 	for(int i = 0; i < FLAGS_n_partitions; ++i) {
-		fibers.push_back(scheduler->start([i, &client, message] () {
+		fibers.push_back(scheduler->start([i, client, message] () {
 			for(int j = 0; j < FLAGS_n_produce; ++j) {
 				try {
 					message_set_builder_t builder(FLAGS_msg_set_size);
 					while(builder.append(message.data(), message.size())) {}
-					client.produce(FLAGS_topic, i, builder.build()).get();
+					client->produce(FLAGS_topic, i, builder.build()).get();
 					TOTAL_BYTES_PRODUCED += FLAGS_msg_set_size;
 				} catch(std::exception& e) {
 					LOG_EVERY_N(ERROR, 100) << e.what();
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 	std::vector<fiber_t> clients;
 
 	for(int i = 0; i < FLAGS_n_clients; ++i) {
-		clients.push_back(scheduler->start(run_client, scheduler.get()));
+		clients.push_back(scheduler->start(run_client, scheduler));
 	}
 
 	for(size_t i = 0; i < 1000; ++i) {

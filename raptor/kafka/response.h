@@ -20,6 +20,8 @@ public:
     int32_t correlation_id;
 
     virtual void read_body(wire_reader_t* reader) = 0;
+
+	virtual ~response_t() {}
 };
 
 typedef std::shared_ptr<response_t> response_ptr_t;
@@ -80,16 +82,25 @@ private:
 
 typedef std::shared_ptr<metadata_response_t> metadata_response_ptr_t;
 
-class fetch_response_t : public response_t {
+class topic_response_t : public response_t {
 public:
-    fetch_response_t() = default;
-    fetch_response_t(const std::string& t, partition_id_t p, kafka_err_t e, offset_t h, message_set_t m)
-        : topic(t), partition(p), err(e), highwatermark_offset(h), message_set(m) {}
+	topic_response_t() = default;
+	topic_response_t(const std::string& t, partition_id_t p, kafka_err_t e)
+		: topic(t), partition(p), err(e) {}
 
     std::string topic;
     partition_id_t partition;
+	kafka_err_t err;
+};
 
-    kafka_err_t err;
+typedef std::shared_ptr<topic_response_t> topic_response_ptr_t;
+
+class fetch_response_t : public topic_response_t {
+public:
+    fetch_response_t() = default;
+    fetch_response_t(const std::string& t, partition_id_t p, kafka_err_t e, offset_t h, message_set_t m)
+        : topic_response_t(t, p, e), highwatermark_offset(h), message_set(m) {}
+
     offset_t highwatermark_offset;
     message_set_t message_set;
 
@@ -98,16 +109,12 @@ public:
 
 typedef std::shared_ptr<fetch_response_t> fetch_response_ptr_t;
 
-class produce_response_t : public response_t {
+class produce_response_t : public topic_response_t {
 public:
     produce_response_t() = default;
     produce_response_t(const std::string& t, partition_id_t p, kafka_err_t e, offset_t o)
-        : topic(t), partition(p), err(e), offset(o) {}
+        : topic_response_t(t, p, e), offset(o) {}
 
-    std::string topic;
-    partition_id_t partition;
-
-    kafka_err_t err;
     offset_t offset;
 
     virtual void read_body(wire_reader_t* reader);
@@ -115,9 +122,12 @@ public:
 
 typedef std::shared_ptr<produce_response_t> produce_response_ptr_t;
 
-class offset_response_t : public response_t {
+class offset_response_t : public topic_response_t {
 public:
-    kafka_err_t err;
+	offset_response_t() = default;
+	offset_response_t(const std::string& t, partition_id_t p, kafka_err_t e, std::vector<offset_t> offsets)
+		: topic_response_t(t, p, e), offsets(offsets) {}
+
     std::vector<offset_t> offsets;
 
     virtual void read_body(wire_reader_t* reader);

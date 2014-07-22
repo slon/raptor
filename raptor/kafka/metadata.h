@@ -11,6 +11,7 @@ namespace raptor { namespace kafka {
 
 class metadata_t {
 public:
+	metadata_t() {}
 	metadata_t(const metadata_response_t& response);
 
 	const broker_addr_t& get_partition_leader_addr(const std::string& topic, partition_id_t partition) const;
