@@ -5,7 +5,7 @@
 namespace raptor { namespace endian {
 
 #define MAKE_LITTLE(n, u) \
-u ## int ## n ## _t little(u ## int ## n ## _t i) { \
+inline u ## int ## n ## _t little(u ## int ## n ## _t i) { \
 	return htole ## n (i); \
 }
 
@@ -19,7 +19,7 @@ MAKE_LITTLE(64, u);
 #undef MAKE_LITTLE
 
 #define MAKE_BIG(n, u) \
-u ## int ## n ## _t big(u ## int ## n ## _t i) { \
+inline u ## int ## n ## _t big(u ## int ## n ## _t i) { \
 	return htobe ## n (i); \
 }
 

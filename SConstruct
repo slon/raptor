@@ -4,7 +4,8 @@ CPPFLAGS=[
     "-std=c++0x", "-g", "-fPIC", "-O3",
     "-isystem", "raptor/fixinclude",
     "-isystem", "test/gmock",
-    "-fno-strict-aliasing"
+    "-fno-strict-aliasing",
+	"-Wall", "-Wextra", "-Werror"
 ]
 
 if ARGUMENTS.get("tsan", False):

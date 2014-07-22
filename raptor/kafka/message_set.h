@@ -10,6 +10,8 @@
 
 namespace raptor { namespace kafka {
 
+struct wire_cursor_t;
+
 class blob_writer_t : public wire_writer_t {
 public:
 	blob_writer_t() : wire_writer_t(NULL, 0) {}
@@ -54,7 +56,10 @@ public:
 	message_set_t() {}
 
 	message_set_t(const message_set_t& other) : data_(other.data_->clone()) {}
-	message_set_t& operator = (const message_set_t& other) { data_ = other.data_->clone(); }
+	message_set_t& operator = (const message_set_t& other) {
+		data_ = other.data_->clone();
+		return *this;
+	}
 
 	message_set_t(message_set_t&&) = default;
 	message_set_t& operator = (message_set_t&& other) = default;
@@ -64,7 +69,7 @@ public:
 	}
 
 	size_t wire_size() const;
-	void read(wire_reader_t* reader);
+	void read(wire_cursor_t* cursor);
 	void write(wire_writer_t* writer) const;
 
 	class iter_t {

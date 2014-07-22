@@ -5,7 +5,7 @@
 namespace raptor { namespace kafka {
 
 producer_t::producer_t(const std::string& topic, kafka_client_t* client, const options_t& options) :
-		topic_(topic), client_(client), options_(options) {}
+		options_(options), topic_(topic), client_(client) {}
 
 
 void producer_t::produce(partition_id_t partition, const std::string& message) {
@@ -23,7 +23,7 @@ void producer_t::produce(partition_id_t partition, const message_t& message) {
 }
 
 void producer_t::flush() {
-	for(partition_id_t partition = 0; partition < builders_.size(); ++partition) {
+	for(size_t partition = 0; partition < builders_.size(); ++partition) {
 		flush(partition);
 	}
 

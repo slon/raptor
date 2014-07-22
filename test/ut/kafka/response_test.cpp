@@ -15,10 +15,10 @@ TEST(metadata_response_t, read) {
 		"00000000"
 	));
 
-	wire_reader_t reader(buff.get());
+	wire_cursor_t cursor(buff.get());
 
 	metadata_response_t meta;
-	meta.read(&reader);
+	meta.read(&cursor);
 
 	ASSERT_EQ(meta.brokers().size(), 2U);
 	ASSERT_EQ(meta.brokers()[0].node_id, 21);
@@ -35,10 +35,10 @@ TEST(metadata_response_t, read) {
 					 "00000001" + "00000018"
 	));
 
-	reader = wire_reader_t(buff.get());
+	cursor = wire_cursor_t(buff.get());
 
 	topic_metadata_t topic;
-	topic.read(&reader);
+	topic.read(&cursor);
 
 	ASSERT_EQ(kafka_err_t::NO_ERROR, topic.topic_err);
 	ASSERT_EQ("foo", topic.name);

@@ -79,87 +79,87 @@ void message_set_t::write(wire_writer_t* writer) const {
 	} while(chunk != data_.get());
 }
 
-void message_set_t::read(wire_reader_t* reader) {
-	int32_t size = check_range(reader->int32(), 0, MAX_MESSAGE_SET_SIZE, "messageset.size");
+void message_set_t::read(wire_cursor_t* cursor) {
+	int32_t size = check_range(cursor->int32(), 0, MAX_MESSAGE_SET_SIZE, "messageset.size");
 
 	if(size > 0) {
-		data_ = reader->raw(size);
-		validate(true);
+		data_ = cursor->raw(size);
+//		validate(true);
 	}
 }
 
-void message_set_t::validate(bool decompress) {
-	wire_reader_t reader(data_.get());
-	size_t msgset_end = 0;
+// void message_set_t::validate(bool decompress) {
+// 	wire_reader_t reader(data_.get());
+// 	size_t msgset_end = 0;
 
-	while(true) {
-		size_t msg_start = reader.pos();
-		if(reader.remaining() < (size_t)12) {
-			msgset_end = msg_start;
-			break;
-		}
+// 	while(true) {
+// 		size_t msg_start = reader.pos();
+// 		if(reader.remaining() < (size_t)12) {
+// 			msgset_end = msg_start;
+// 			break;
+// 		}
 
-		int64_t offset = reader.int64();
-		int32_t msg_size = check_range(reader.int32(), 0, MAX_MESSAGE_SIZE, "msg.size");
+// 		int64_t offset = reader.int64();
+// 		int32_t msg_size = check_range(reader.int32(), 0, MAX_MESSAGE_SIZE, "msg.size");
 
-		if(reader.remaining() < (size_t)msg_size) {
-			msgset_end = msg_start;
-			break;
-		}
+// 		if(reader.remaining() < (size_t)msg_size) {
+// 			msgset_end = msg_start;
+// 			break;
+// 		}
 
-		int32_t crc = reader.int32();
+// 		int32_t crc = reader.int32();
 
-		boost::crc_32_type compute_crc;
-		compute_crc.process_bytes(reader.ptr(), msg_size - 4);
+// 		boost::crc_32_type compute_crc;
+// 		compute_crc.process_bytes(reader.ptr(), msg_size - 4);
 
-		if(static_cast<uint32_t>(crc) != compute_crc()) {
-			throw exception_t(std::string("msg crc don't match:") +
-							  " actual=" + std::to_string(compute_crc()) +
-							  ", expected=" + std::to_string(static_cast<uint32_t>(crc)));
-		}
+// 		if(static_cast<uint32_t>(crc) != compute_crc()) {
+// 			throw exception_t(std::string("msg crc don't match:") +
+// 							  " actual=" + std::to_string(compute_crc()) +
+// 							  ", expected=" + std::to_string(static_cast<uint32_t>(crc)));
+// 		}
 
-		if(0 != reader.int8()) {
-			throw exception_t("unsupported msg version");
-		}
+// 		if(0 != reader.int8()) {
+// 			throw exception_t("unsupported msg version");
+// 		}
 
-		int8_t compression = reader.int8();
-		if(compression != 0 && compression != (int8_t)compression_codec_t::SNAPPY) {
-			throw exception_t("unsupported compression");
-		} else if(decompress && compression == (int8_t)compression_codec_t::SNAPPY) {
-			reader.skip_bytes(); // skip key
+// 		int8_t compression = reader.int8();
+// 		if(compression != 0 && compression != (int8_t)compression_codec_t::SNAPPY) {
+// 			throw exception_t("unsupported compression");
+// 		} else if(decompress && compression == (int8_t)compression_codec_t::SNAPPY) {
+// 			reader.skip_bytes(); // skip key
 
-			int32_t value_size = reader.int32();
-			if(value_size == -1) throw exception_t("message set value is null");
-			char const* value = reader.ptr();
+// 			int32_t value_size = reader.int32();
+// 			if(value_size == -1) throw exception_t("message set value is null");
+// 			char const* value = reader.ptr();
 
-			size_t uncompressed_length;
-			if(!snappy::GetUncompressedLength(value, value_size, &uncompressed_length)) {
-				throw exception_t("can't get snappy uncompressed length");
-			}
+// 			size_t uncompressed_length;
+// 			if(!snappy::GetUncompressedLength(value, value_size, &uncompressed_length)) {
+// 				throw exception_t("can't get snappy uncompressed length");
+// 			}
 
-			std::unique_ptr<io_buff_t> uncompressed = io_buff_t::create(uncompressed_length);
-			if(!snappy::RawUncompress(value, value_size, (char*)uncompressed->writable_data())) {
-				throw exception_t("snappy uncompress failed");
-			}
-			uncompressed->append(uncompressed_length);
+// 			std::unique_ptr<io_buff_t> uncompressed = io_buff_t::create(uncompressed_length);
+// 			if(!snappy::RawUncompress(value, value_size, (char*)uncompressed->writable_data())) {
+// 				throw exception_t("snappy uncompress failed");
+// 			}
+// 			uncompressed->append(uncompressed_length);
 
-			if(data_->length() != msgset_end) {
-				std::unique_ptr<io_buff_t> tail = data_->clone();
-				tail->trim_start(msgset_end);
-				uncompressed->append_chain(std::move(tail));
-			}
+// 			if(data_->length() != msgset_end) {
+// 				std::unique_ptr<io_buff_t> tail = data_->clone();
+// 				tail->trim_start(msgset_end);
+// 				uncompressed->append_chain(std::move(tail));
+// 			}
 
-			data_->trim_end(data_->length() - msg_start);
-			data_->append_chain(std::move(uncompressed));
-		} else {
-			reader.skip_bytes(); // skip key
-			reader.skip_bytes(); // skip value
-		}
-	}
+// 			data_->trim_end(data_->length() - msg_start);
+// 			data_->append_chain(std::move(uncompressed));
+// 		} else {
+// 			reader.skip_bytes(); // skip key
+// 			reader.skip_bytes(); // skip value
+// 		}
+// 	}
 
-	// server may return incomplete part of message, we should just cut it off
-	data_->trim_end(data_->length() - msgset_end);
-}
+// 	// server may return incomplete part of message, we should just cut it off
+// 	data_->trim_end(data_->length() - msgset_end);
+// }
 
 bool message_set_t::iter_t::is_end() const {
 	return current_ == last_ && reader_.is_end();

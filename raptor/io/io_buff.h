@@ -737,7 +737,7 @@ public:
 	 * This only checks the current io_buff_t, and not other io_buff_ts in the chain.
 	 */
 	bool is_shared_one() const {
-		if (flags_ & (kFlagUserOwned | kFlagMaybeShared) == 0) {
+		if ((flags_ & (kFlagUserOwned | kFlagMaybeShared)) == 0) {
 			return false;
 		}
 

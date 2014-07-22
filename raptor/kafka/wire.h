@@ -2,9 +2,11 @@
 
 #include <string>
 #include <cstdint>
+#include <iostream>
 
 #include <raptor/core/time.h>
 #include <raptor/io/io_buff.h>
+#include <raptor/io/cursor.h>
 
 #include <raptor/kafka/exception.h>
 
@@ -16,7 +18,7 @@ int_t check_range(int_t value,
 				  int_t max,
 				  char const* name) {
 	if(value < min || value > max) {
-		throw exception_t(
+		throw std::out_of_range(
 			std::string("Error parsing ") +
 			name + ", " + std::to_string(value) +
 			" not in range [" + std::to_string(min) +
@@ -30,9 +32,14 @@ int_t check_range(int_t value,
 template<class int_t>
 void check(int_t expected, int_t actual, char const* name) {
 	if(expected != actual) {
-		throw exception_t(name);
+		throw std::out_of_range(name);
 	}
 }
+
+class wire_appender_t {
+public:
+	wire_appender_t(io_buff_t* buff) : appender_(buff) {}
+};
 
 class wire_writer_t {
 public:
@@ -88,6 +95,56 @@ protected:
 	duration_t* timeout_;
 };
 
+class wire_cursor_t {
+public:
+	wire_cursor_t(const io_buff_t* buff) : cursor_(buff) {}
+
+	int8_t int8() { return cursor_.read_be<int8_t>(); }
+	int16_t int16() { return cursor_.read_be<int16_t>(); }
+	int32_t int32() { return cursor_.read_be<int32_t>(); }
+	int64_t int64() { return cursor_.read_be<int64_t>(); }
+	int32_t array_size() { return cursor_.read_be<int32_t>(); }
+
+	bool string(std::string* str) {
+		int16_t size = int16();
+		if(size == -1) {
+			return false;
+		} else if(size < -1) {
+			throw std::out_of_range("string size < -1");
+		} else {
+			str->resize(size);
+			cursor_.pull(&(*str)[0], size);
+
+			return true;
+		}
+	}
+
+	std::unique_ptr<io_buff_t> raw(int32_t size) {
+		std::unique_ptr<io_buff_t> buff;
+		cursor_.clone(buff, size);
+		return buff;
+	}
+
+	void skip_bytes() {
+		int32_t size = int32();
+		if(size == -1) {
+			return;
+		} else if(size < -1) {
+			throw std::out_of_range("bytes size < -1");
+		} else {
+			skip(size);
+		}
+	}
+
+	void skip(size_t size) {
+		cursor_.skip(size);
+	}
+
+private:
+	cursor_t cursor_;
+};
+
+
 class wire_reader_t {
 public:
 	wire_reader_t(io_buff_t* buff) : buff_(buff), pos_(0) {}
@@ -109,7 +166,6 @@ public:
 	void skip(size_t size);
 	size_t remaining() const;
 	size_t pos() const;
-	void jump(size_t pos);
 private:
 	io_buff_t* buff_;
 	size_t pos_;

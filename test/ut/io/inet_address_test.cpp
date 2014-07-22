@@ -17,7 +17,7 @@ TEST(inet_address_test_t, get_fqdn) {
 }
 
 TEST(inet_address_test_t, resolve) {
-	inet_address_t addr = inet_address_t::resolve_ip("yandex.ru");
+	inet_address_t::resolve_ip("yandex.ru");
 	ASSERT_THROW(inet_address_t::resolve_ip("asldkjfqwkjnflsakdjnv.rasdlu"), std::runtime_error);
 }
 

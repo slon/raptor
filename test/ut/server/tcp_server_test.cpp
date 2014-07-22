@@ -6,10 +6,6 @@
 
 using namespace raptor;
 
-TEST(sockaddr, test) {
-	struct sockaddr_storage sas;
-}
-
 TEST(tcp_server_test_t, simple_bind) {
 	auto s = make_scheduler();
 

@@ -118,7 +118,7 @@ struct watcher_data_t {
 	int events;
 };
 
-static void switch_to_cb(struct ev_loop* loop, ev_watcher* io, int events) {
+static void switch_to_cb(struct ev_loop* , ev_watcher* io, int events) {
 	watcher_data_t* data = (watcher_data_t*)io->data;
 	data->events = events;
 	data->fiber->switch_to();

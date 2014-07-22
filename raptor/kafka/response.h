@@ -15,11 +15,11 @@ class response_t {
 public:
     response_t() : correlation_id(0) {}
 
-    void read(wire_reader_t* reader);
+    void read(wire_cursor_t* cursor);
 
     int32_t correlation_id;
 
-    virtual void read_body(wire_reader_t* reader) = 0;
+    virtual void read_body(wire_cursor_t* cursor) = 0;
 
 	virtual ~response_t() {}
 };
@@ -34,7 +34,7 @@ public:
     std::vector<int32_t> replicas;
     std::vector<int32_t> in_sync_replicas;
 
-    void read(wire_reader_t* reader);
+    void read(wire_cursor_t* cursor);
 };
 
 class topic_metadata_t {
@@ -43,7 +43,7 @@ public:
     std::string name;
     std::vector<partition_metadata_t> partitions;
 
-    void read(wire_reader_t* reader);
+    void read(wire_cursor_t* cursor);
 };
 
 class metadata_response_t : public response_t {
@@ -57,7 +57,7 @@ public:
         // for some reason port have type int32 in protocol
         int32_t port;
 
-        void read(wire_reader_t* reader);
+        void read(wire_cursor_t* cursor);
     };
 
 
@@ -77,7 +77,7 @@ private:
     std::vector<broker_t> brokers_;
     std::vector<topic_metadata_t> topics_;
 
-    virtual void read_body(wire_reader_t* reader);
+    virtual void read_body(wire_cursor_t* cursor);
 };
 
 typedef std::shared_ptr<metadata_response_t> metadata_response_ptr_t;
@@ -104,7 +104,7 @@ public:
     offset_t highwatermark_offset;
     message_set_t message_set;
 
-    virtual void read_body(wire_reader_t* reader);
+    virtual void read_body(wire_cursor_t* cursor);
 };
 
 typedef std::shared_ptr<fetch_response_t> fetch_response_ptr_t;
@@ -117,7 +117,7 @@ public:
 
     offset_t offset;
 
-    virtual void read_body(wire_reader_t* reader);
+    virtual void read_body(wire_cursor_t* cursor);
 };
 
 typedef std::shared_ptr<produce_response_t> produce_response_ptr_t;
@@ -130,7 +130,7 @@ public:
 
     std::vector<offset_t> offsets;
 
-    virtual void read_body(wire_reader_t* reader);
+    virtual void read_body(wire_cursor_t* cursor);
 };
 
 typedef std::shared_ptr<offset_response_t> offset_response_ptr_t;

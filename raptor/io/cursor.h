@@ -232,6 +232,75 @@ public:
 		: cursor_base_t<cursor_t, const io_buff_t>(cursor) {}
 };
 
+class rw_cursor_t : public cursor_base_t<rw_cursor_t, io_buff_t>, public writable_t<rw_cursor_t> {
+public:
+	explicit rw_cursor_t(io_buff_t* buf) :
+		cursor_base_t<rw_cursor_t, io_buff_t>(buf) {}
+
+	template<class other_cursor_t>
+	explicit rw_cursor_t(other_cursor_t& cursor)
+		: cursor_base_t<rw_cursor_t, io_buff_t>(cursor) {}
+
+	/**
+	 * Gather at least n bytes contiguously into the current buffer,
+	 * by coalescing subsequent buffers from the chain as necessary.
+	 */
+	void gather(size_t n) {
+		this->crt_buf_->gather(this->offset_ + n);
+	}
+
+	size_t push_at_most(const uint8_t* buf, size_t len) {
+		size_t copied = 0;
+		for (;;) {
+			// Fast path: the current buffer is big enough.
+			size_t available = this->length();
+			if (LIKELY(available >= len)) {
+				memcpy(writable_data(), buf, len);
+				this->offset_ += len;
+				return copied + len;
+			}
+
+			memcpy(writable_data(), buf, available);
+			copied += available;
+			if (UNLIKELY(!this->try_advance_buffer())) {
+				return copied;
+			}
+			buf += available;
+			len -= available;
+		}
+	}
+
+	void insert(std::unique_ptr<io_buff_t> buf) {
+		io_buff_t* next_buf;
+		if (this->offset_ == 0) {
+			// Can just prepend
+			next_buf = buf.get();
+			this->crt_buf_->prepend_chain(std::move(buf));
+		} else {
+			std::unique_ptr<io_buff_t> remaining;
+			if (this->crt_buf_->length() - this->offset_ > 0) {
+				// Need to split current io_buff_t in two.
+				remaining = this->crt_buf_->clone_one();
+				remaining->trim_start(this->offset_);
+				next_buf = remaining.get();
+				buf->prepend_chain(std::move(remaining));
+			} else {
+				// Can just append
+				next_buf = this->crt_buf_->next();
+			}
+			this->crt_buf_->trim_end(this->length());
+			this->crt_buf_->append_chain(std::move(buf));
+		}
+		// Jump past the new links
+		this->offset_ = 0;
+		this->crt_buf_ = next_buf;
+	}
+
+	uint8_t* writable_data() {
+		return this->crt_buf_->writable_data() + this->offset_;
+	}
+};
+
 class appender_t : public writable_t<appender_t> {
 public:
 	appender_t(io_buff_t* buf, uint32_t growth) :

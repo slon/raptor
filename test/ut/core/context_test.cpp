@@ -32,7 +32,7 @@ TEST(context_test_t, simple_switch) {
 	SUCCEED();
 }
 
-static void throw_exception(void* p) {
+static void throw_exception(void* ) {
 	throw std::runtime_error("take that!");
 }
 

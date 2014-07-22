@@ -116,7 +116,7 @@ TEST(future_test_t, then_on_exception_future) {
 TEST(future_test_t, then_silence_exception) {
 	future_t<int> future = make_exception_future<int>(std::make_exception_ptr(std::runtime_error("")));
 
-	future_t<int> future2 = future.then([] (future_t<int> f) { return 2; });
+	future_t<int> future2 = future.then([] (future_t<int> ) { return 2; });
 	EXPECT_TRUE(future2.has_value());
 	EXPECT_EQ(2, future2.get());
 }
@@ -154,8 +154,8 @@ TEST(future_test_t, bind_on_ready_future) {
 	future_t<int> f1 = make_ready_future(1);
 
 	future_t<double> f2 = f1.bind([] (future_t<int> f) { return make_ready_future(f.get() + 1.0); });
-	future_t<double> f3 = f1.bind([] (future_t<int> f) -> future_t<double> { throw std::runtime_error(""); });
-	future_t<double> f4 = f1.bind([] (future_t<int> f) { return make_exception_future<double>(std::make_exception_ptr(std::runtime_error(""))); });
+	future_t<double> f3 = f1.bind([] (future_t<int> ) -> future_t<double> { throw std::runtime_error(""); });
+	future_t<double> f4 = f1.bind([] (future_t<int> ) { return make_exception_future<double>(std::make_exception_ptr(std::runtime_error(""))); });
 
 	ASSERT_TRUE(f2.has_value());
 	ASSERT_TRUE(f3.has_exception());
@@ -166,9 +166,9 @@ TEST(future_test_t, bind_on_exception_future) {
 	future_t<int> f1 = make_exception_future<int>(std::make_exception_ptr(std::runtime_error("")));
 
 	future_t<double> f2 = f1.bind([] (future_t<int> f) { return make_ready_future(f.get() + 1.0); });
-	future_t<double> f3 = f1.bind([] (future_t<int> f) -> future_t<double> { throw std::runtime_error(""); });
-	future_t<double> f4 = f1.bind([] (future_t<int> f) { return make_exception_future<double>(std::make_exception_ptr(std::runtime_error(""))); });
-	future_t<double> f5 = f1.bind([] (future_t<int> f) { return make_ready_future(5.0); });
+	future_t<double> f3 = f1.bind([] (future_t<int> ) -> future_t<double> { throw std::runtime_error(""); });
+	future_t<double> f4 = f1.bind([] (future_t<int> ) { return make_exception_future<double>(std::make_exception_ptr(std::runtime_error(""))); });
+	future_t<double> f5 = f1.bind([] (future_t<int> ) { return make_ready_future(5.0); });
 
 	ASSERT_TRUE(f2.has_exception());
 	ASSERT_TRUE(f3.has_exception());

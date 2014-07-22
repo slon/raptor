@@ -87,8 +87,8 @@ void rt_kafka_link_t::recv_loop() {
 		try {
 			duration_t timeout = options_.lib.link_timeout;
 			std::unique_ptr<io_buff_t> buff = read_to_buff(socket_.fd(), &timeout);
-			wire_reader_t reader(buff.get());
-			rpc.response->read(&reader);
+			wire_cursor_t cursor(buff.get());
+			rpc.response->read(&cursor);
 			rpc.promise.set_value();
 		} catch(const std::exception& e) {
 			auto err = std::current_exception();

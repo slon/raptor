@@ -40,7 +40,7 @@ private:
 	scheduler_impl_t impl_;
 };
 
-scheduler_ptr_t make_scheduler(const std::string& name) {
+scheduler_ptr_t make_scheduler(const std::string& ) {
 	return std::make_shared<single_threaded_scheduler_t>();
 }
 

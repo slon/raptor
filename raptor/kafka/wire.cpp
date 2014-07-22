@@ -252,8 +252,4 @@ size_t wire_reader_t::pos() const {
 	return pos_;
 }
 
-void wire_reader_t::jump(size_t pos) {
-	pos_ = pos;
-}
-
 }} // namespace raptor::kafka

@@ -35,7 +35,7 @@ struct future_traits_t<void> {
 
 	static void forward_value(
 		promise_t<void>* promise,
-		future_t<void>* future
+		future_t<void>*
 	) {
 		promise->set_value();
 	}
