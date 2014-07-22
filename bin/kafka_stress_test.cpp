@@ -51,6 +51,7 @@ void run_client(scheduler_ptr_t scheduler) {
 	}
 
 	for(auto& f : fibers) f.join();
+	client->shutdown();
 }
 
 
@@ -79,6 +80,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	for(auto& f : clients) f.join();
+	scheduler->shutdown();
 
 	return 0;
 }

@@ -167,6 +167,8 @@ TEST(channel_test_t, close_unblocks_reader) {
 	fiber.join();
 
 	EXPECT_FALSE(get_res);
+
+	sched->shutdown();
 }
 
 TEST(channel_test_t, close_unblocks_writer) {
@@ -184,6 +186,7 @@ TEST(channel_test_t, close_unblocks_writer) {
 	fiber.join();
 
 	EXPECT_FALSE(put_res);
+	sched->shutdown();
 }
 
 TEST_F(stress_test_t, sum) {

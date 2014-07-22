@@ -2,9 +2,7 @@
 
 #include <gflags/gflags.h>
 
-#include <raptor/kafka/rt_network.h>
-#include <raptor/kafka/rt_link.h>
-#include <raptor/io/inet_address.h>
+#include <raptor/kafka/kafka_cluster.h>
 #include <raptor/daemon/daemon.h>
 
 DEFINE_string(host, "localhost", "kafka host");
@@ -21,19 +19,23 @@ int main(int argc, char* argv[]) {
 
 	options_t opts;
 
-	auto addr = inet_address_t::resolve_ip(FLAGS_host);
-	addr.set_port(FLAGS_port);
-
 	duration_t timeout(0.4);
-	rt_link_t link(addr.connect(&timeout), opts);
+	rt_kafka_link_t link({ FLAGS_host, FLAGS_port }, scheduler, opts);
 
 	auto request = std::make_shared<metadata_request_t>();
 	auto response = std::make_shared<metadata_response_t>();
 
-	link.start(scheduler.get());
-	link.send(request, response).get();
+	kafka_rpc_t rpc;
+	rpc.request = request;
+	rpc.response = response;
+
+	link.send(rpc);
+	rpc.promise.get_future().get();
 
 	std::cout << *response;
+
+	link.shutdown();
+	scheduler->shutdown();
 
 	return 0;
 }
