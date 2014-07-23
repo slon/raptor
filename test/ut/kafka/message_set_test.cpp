@@ -48,4 +48,14 @@ TEST(message_set_builder_t, compression) {
 	message_t msg = iter.next();
 	ASSERT_EQ((int8_t)compression_codec_t::SNAPPY, msg.flags);
 	ASSERT_TRUE(iter.is_end());
+
+	msgset.validate(true);
+	iter = msgset.iter();
+	ASSERT_FALSE(iter.is_end());
+	msg = iter.next();
+	ASSERT_EQ(std::string("1234"), std::string(msg.value, msg.value_size));
+	ASSERT_FALSE(iter.is_end());
+	msg = iter.next();
+	ASSERT_EQ(std::string("5678"), std::string(msg.value, msg.value_size));
+	ASSERT_TRUE(iter.is_end());
 }

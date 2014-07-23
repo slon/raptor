@@ -208,6 +208,7 @@ std::unique_ptr<io_buff_t> wire_reader_t::raw(int32_t size) {
 
 void wire_reader_t::raw(int32_t size, char* buffer) {
 	if(size + pos_ > buff_->length()) {
+		std::cerr << size << " " << pos_ << " " << buff_->length() << std::endl;
 		throw exception_t("void wire_reader_t::raw(int32_t, char*) overflow");
 	}
 
@@ -243,6 +244,7 @@ void wire_reader_t::skip(size_t size) {
 }
 
 size_t wire_reader_t::remaining() const {
+	assert(pos_ < buff_->length());
 	return buff_->length() - pos_;
 }
 

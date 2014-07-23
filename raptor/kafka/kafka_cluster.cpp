@@ -30,8 +30,8 @@ rt_kafka_link_t::rt_kafka_link_t(
 		options_(options),
 		send_channel_(4096),
 		recv_channel_(4096) {
-	send_fiber_ = scheduler->start(&rt_kafka_link_t::send_loop, this, broker);
 	recv_fiber_ = scheduler->start(&rt_kafka_link_t::recv_loop, this);
+	send_fiber_ = scheduler->start(&rt_kafka_link_t::send_loop, this, broker);
 }
 
 void rt_kafka_link_t::connect(const broker_addr_t& broker) {
@@ -69,8 +69,8 @@ void rt_kafka_link_t::send_loop(broker_addr_t broker) {
 			}
 		} catch (const std::exception& e) {
 			auto err = std::current_exception();
-			rpc.promise.set_exception(std::current_exception());
 			close(err);
+			rpc.promise.set_exception(get_closing_error());
 		}
 	}
 
@@ -92,8 +92,8 @@ void rt_kafka_link_t::recv_loop() {
 			rpc.promise.set_value();
 		} catch(const std::exception& e) {
 			auto err = std::current_exception();
-			rpc.promise.set_exception(err);
 			close(err);
+			rpc.promise.set_exception(get_closing_error());
 		}
 	}
 
@@ -129,6 +129,7 @@ bool rt_kafka_link_t::is_closed() {
 
 void rt_kafka_link_t::shutdown() {
 	close(std::make_exception_ptr(std::runtime_error("rt_kafka_link_t shutdown")));
+
 	recv_fiber_.join();
 	send_fiber_.join();
 }
@@ -225,7 +226,7 @@ void rt_kafka_cluster_t::router_loop() {
 			route_rpc(rpc);
 		} catch(std::exception& e) {
 			metadata_correct_ = false;
-			rpc.promise.set_exception(e);
+			rpc.promise.set_exception(std::current_exception());
 		}
 	}
 

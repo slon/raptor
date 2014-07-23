@@ -5,6 +5,7 @@
 
 #include <boost/crc.hpp>
 #include <snappy.h>
+#include <glog/logging.h>
 
 #include <raptor/kafka/exception.h>
 
@@ -128,6 +129,7 @@ void message_set_t::validate(bool decompress) {
 			reader.skip_bytes(); // skip key
 
 			int32_t value_size = reader.int32();
+			if(value_size == -1) throw exception_t("message set value is null");
 			char const* value = reader.ptr();
 
 			size_t uncompressed_length;
@@ -267,6 +269,8 @@ message_set_t message_set_builder_t::build() {
 		data_->append(writer_.pos() - data_->length());
 		return message_set_t(data_->clone());
 	} else if(compression_ == compression_codec_t::SNAPPY) {
+		LOG(INFO) << "compressing";
+
 		std::string compressed;
 		snappy::Compress((char*)data_->data(), writer_.pos(), &compressed);
 
@@ -274,6 +278,8 @@ message_set_t message_set_builder_t::build() {
 		msg.value = compressed.data();
 		msg.value_size = compressed.size();
 		msg.flags = (int8_t)compression_codec_t::SNAPPY;
+
+		LOG(INFO) << writer_.pos() << " " << compressed.size();
 
 		size_t full_size = full_message_size(msg);
 		message_set_builder_t builder(full_size);

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 
 #include <stdexcept>
@@ -66,7 +67,7 @@ static inet_address_t getaddrinfo(char const* hostname, char const* port, int ai
 
 		freeaddrinfo(result);
 	} else {
-		throw std::runtime_error("getaddrinfo(): '" + std::string(hostname) + "' :" + gai_strerror(res));
+		throw std::runtime_error("getaddrinfo(): '" + std::string(hostname) + "': " + gai_strerror(res));
 	}
 
 	return address;
@@ -92,19 +93,19 @@ fd_guard_t inet_address_t::bind() {
 	fd_guard_t sock(socket(ss.ss_family, SOCK_STREAM, 0));
 
 	if(sock.fd() < 0)
-		throw std::system_error(errno, std::system_category(), "socket(): ");
+		throw std::system_error(errno, std::system_category(), "socket()");
 
 	rt_ctl_nonblock(sock.fd());
 
 	int i = 1;
 	if(setsockopt(sock.fd(), SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i)) < 0)
-		throw std::system_error(errno, std::system_category(), "setsockopt(): ");
+		throw std::system_error(errno, std::system_category(), "setsockopt()");
 
 	if(::bind(sock.fd(), addr(), addrlen()) < 0)
-		throw std::system_error(errno, std::system_category(), "bind(): ");
+		throw std::system_error(errno, std::system_category(), "bind()");
 
 	if(listen(sock.fd(), SOMAXCONN) < 0)
-		throw std::system_error(errno, std::system_category(), "listen(): ");
+		throw std::system_error(errno, std::system_category(), "listen()");
 
 	return std::move(sock);
 }
@@ -113,16 +114,28 @@ fd_guard_t inet_address_t::connect(duration_t* timeout) {
 	fd_guard_t sock(socket(ss.ss_family, SOCK_STREAM, 0));
 
 	if(sock.fd() == -1) {
-		throw std::system_error(errno, std::system_category(), "socket(): ");
+		throw std::system_error(errno, std::system_category(), "socket()");
 	}
 
 	rt_ctl_nonblock(sock.fd());
 
 	if(rt_connect(sock.fd(), addr(), addrlen(), timeout) == -1) {
-		throw std::system_error(errno, std::system_category(), "connect(): ");
+		throw std::system_error(errno, std::system_category(), "connect()");
 	}
 
 	return sock;
+}
+
+std::string inet_address_t::to_string() {
+	std::string buffer;
+	buffer.resize(128);
+
+	if(inet_ntop(ss.ss_family, addr(), &buffer[0], buffer.size()) == 0) {
+		throw std::system_error(errno, std::system_category(), "inet_ntop()");
+	}
+
+	buffer.resize(strlen(buffer.c_str()));
+	return buffer + ":" + std::to_string(port());
 }
 
 } // namespace raptor
