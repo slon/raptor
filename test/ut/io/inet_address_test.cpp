@@ -81,17 +81,32 @@ TEST(socket_test_t, normal_connect) {
 	auto client_socket2 = address.connect(&timeout);
 }
 
+TEST(socket_test_t, bad_connect) {
+	duration_t timeout(0.1);
+	auto local = inet_address_t::resolve_ip_port("localhost", "3214");
+	EXPECT_THROW(local.connect(nullptr), std::runtime_error);
+	EXPECT_THROW(local.connect(&timeout), std::runtime_error);
+
+	auto remote = inet_address_t::resolve_ip_port("yandex.ru", "12341");
+	EXPECT_THROW(remote.connect(&timeout), std::runtime_error);	
+}
+
 TEST(socket_test_t, connect_timeout) {
 	auto s = make_scheduler();
 
 	s->start([] () {
-		auto address = inet_address_t::parse_ip_port("127.0.0.1", "29853");
+		auto bad = inet_address_t::parse_ip_port("127.0.0.1", "29853");
+		auto good = inet_address_t::parse_ip_port("127.0.0.1", "29853");
 
-		auto listening_socket = address.bind();
+		duration_t t(0.01);
+		EXPECT_THROW(bad.connect(nullptr), std::runtime_error);
+		EXPECT_THROW(bad.connect(&t), std::runtime_error);
+
+		auto listening_socket = good.bind();
 		try {
 			while(true) {
 				duration_t timeout(0.01);
-				address.connect(&timeout);
+				good.connect(&timeout);
 			}
 		} catch(std::exception& e) {
 			ASSERT_TRUE(true);

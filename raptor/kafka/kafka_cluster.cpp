@@ -148,6 +148,8 @@ void rt_kafka_network_t::send(const broker_addr_t& broker, kafka_rpc_t rpc) {
 
 	auto& link = active_links_[broker];
 	if(!link || link->is_closed()) {
+		if(link && link->is_closed()) link->shutdown();
+
 		link = std::make_shared<rt_kafka_link_t>(broker, scheduler_, options_);
 	}
 

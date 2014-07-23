@@ -20,11 +20,9 @@ public:
 	socklen_t ss_len;
 	struct sockaddr_storage ss;
 
-	static inet_address_t resolve(const std::string& hostname_port);
 	static inet_address_t resolve_ip(const std::string& hostname);
 	static inet_address_t resolve_ip_port(const std::string& hostname, const std::string& port);
 
-	static inet_address_t parse(const std::string& ip_port);
 	static inet_address_t parse_ip(const std::string& ip);
 	static inet_address_t parse_ip_port(const std::string& ip, const std::string& port);
 

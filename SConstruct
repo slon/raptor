@@ -45,3 +45,7 @@ env.Program("run_ut",
             Glob("test/ut/core/*.cpp") + Glob("test/ut/kafka/*.cpp") +
 			Glob("test/ut/server/*.cpp") + gmock_main,
             LIBS=LIBS + [gmock])
+
+env.Program("test/it/kafka/run_it",
+            Glob("test/it/kafka/*.cpp") + gmock_main,
+            LIBS=LIBS + [gmock])

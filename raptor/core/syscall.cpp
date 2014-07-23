@@ -27,7 +27,7 @@ scheduler_impl_t::wait_result_t wait_io(int fd, int flags, duration_t* timeout) 
 		if(timeout)
 			*timeout -= (poll_end - poll_start);
 
-		if(res == 1) {
+		if(res == 1 && ((pollfd.revents & (~pollfd.events)) == 0)) {
 			return scheduler_impl_t::READY;
 		} else if(res == 0) {
 			return scheduler_impl_t::TIMEDOUT;
@@ -103,16 +103,18 @@ int rt_connect(int fd, struct sockaddr const *addr, socklen_t addrlen, duration_
 	if(res < 0 && errno == EINPROGRESS) {
 		int wait_res = wait_io(fd, EV_WRITE, timeout);
 
-		if(wait_res == scheduler_impl_t::ERROR) {
-			int err; socklen_t errlen = sizeof(err);
-			getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &errlen);
-			errno = err;
-			return -1;
-		} else if(wait_res == scheduler_impl_t::TIMEDOUT) {
+		if(wait_res == scheduler_impl_t::TIMEDOUT) {
 			errno = ETIMEDOUT;
 			return -1;
 		} else {
-			return 0;
+			int err; socklen_t errlen = sizeof(err);
+			getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &errlen);
+			if(err) {
+				errno = err;
+				return -1;
+			} else {
+				return 0;
+			}
 		}
 	}
 

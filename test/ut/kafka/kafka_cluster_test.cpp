@@ -81,30 +81,6 @@ TEST_F(kafka_cluster_test_t, shutdown) {
 	std::this_thread::sleep_for(options.lib.metadata_refresh_backoff / 2);
 }
 
-// TEST_F(kafka_cluster_test_t, refresh_metadata_on_startup) {
-// 	EXPECT_CALL(*network, send(broker_addr_t{ "test", 9092 }, IsMetadataRequest()))
-// 		.WillOnce(CompleteRPC());
-// 	create_cluster();
-
-// 	std::this_thread::sleep_for(options.lib.metadata_refresh_backoff * 5);
-// }
-
-// TEST_F(kafka_cluster_test_t, refreshes_metadata_until_success) {
-// 	InSequence s;
-
-// 	EXPECT_CALL(*network, send(_, IsMetadataRequest()))
-// 		.WillOnce(FailRPC())
-// 		.WillOnce(FailRPC())
-// 		.WillOnce(FailRPC());
-
-// 	EXPECT_CALL(*network, send(_, IsMetadataRequest()))
-// 		.WillOnce(CompleteRPC());
-
-// 	create_cluster();
-
-// 	std::this_thread::sleep_for(options.lib.metadata_refresh_backoff * 5);
-// }
-
 ACTION(ReturnMetadata) {
 	auto metadata = std::dynamic_pointer_cast<metadata_response_t>(arg1.response);
 	*metadata = kafka_cluster_test_t::make_test_metadata_response();
