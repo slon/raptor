@@ -57,7 +57,7 @@ std::unique_ptr<io_buff_t> xerial_snappy_decompress(io_buff_t const* buf) {
 		int32_t compat = cursor.read_be<int32_t>();
 
 		if(version != 1 || compat != 1)
-			throw std::runtime_error("unsupported xerial blocking version");
+			throw std::runtime_error("unsupported xerial blocking format version");
 
 		while(cursor.peek().second != 0) {
 			int32_t block_size = cursor.read_be<int32_t>();

@@ -8,14 +8,10 @@
 #include <raptor/core/mutex.h>
 #include <raptor/io/fd_guard.h>
 
-#include <raptor/client/bus.h>
-
 #include <raptor/kafka/request.h>
 #include <raptor/kafka/response.h>
 #include <raptor/kafka/options.h>
 #include <raptor/kafka/metadata.h>
-
-#include <glog/logging.h>
 
 namespace raptor { namespace kafka {
 
