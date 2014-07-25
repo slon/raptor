@@ -12,6 +12,8 @@ namespace raptor { namespace kafka {
 
 struct wire_cursor_t;
 
+std::unique_ptr<io_buff_t> xerial_snappy_decompress(io_buff_t const* compressed);
+
 class blob_writer_t : public wire_writer_t {
 public:
 	blob_writer_t() : wire_writer_t(NULL, 0) {}
@@ -64,33 +66,34 @@ public:
 	message_set_t(message_set_t&&) = default;
 	message_set_t& operator = (message_set_t&& other) = default;
 
-	explicit message_set_t(std::unique_ptr<io_buff_t> data) : data_(std::move(data)) {
-		assert(!data_->is_chained());
-	}
+	explicit message_set_t(std::unique_ptr<io_buff_t> data) : data_(std::move(data)) {}
 
 	size_t wire_size() const;
 	void read(wire_cursor_t* cursor);
-	void write(wire_writer_t* writer) const;
+	void write(wire_appender_t* appender) const;
 
 	class iter_t {
 	public:
-		bool is_end() const;
+		bool is_end();
 		message_t next();
 
 	private:
 		iter_t(io_buff_t* buff)
-			: current_(buff), last_(buff->prev()), reader_(current_) {}
+			: cursor_(buff) {}
 
-		io_buff_t* current_;
-		io_buff_t* last_;
-		wire_reader_t reader_;
+		wire_cursor_t cursor_;
 
 		friend class message_set_t;
 	};
 
 	iter_t iter() const;
 
-	void validate(bool decompress = true);
+	void validate(bool decompress);
+
+	static std::unique_ptr<io_buff_t> validate(
+		std::unique_ptr<io_buff_t>&& buf,
+		bool decompress = true,
+		bool allow_compression = true);
 
 private:
 	std::unique_ptr<io_buff_t> data_;

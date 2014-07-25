@@ -171,6 +171,39 @@ public:
 		}
 	}
 
+	bool operator==(const cursor_base_t& other) const {
+		return crt_buf_ == other.crt_buf_ && offset_ == other.offset_;
+	}
+
+	size_t operator-(const cursor_base_t& other) const {
+		buff_t *other_buf = other.crt_buf_;
+		size_t len = 0;
+
+		if (other_buf != crt_buf_) {
+			len += other_buf->length() - other.offset_;
+
+			for (other_buf = other_buf->next();
+				 other_buf != crt_buf_ && other_buf != other.buffer_;
+				 other_buf = other_buf->next()) {
+				len += other_buf->length();
+			}
+
+			if (other_buf == other.buffer_) {
+				throw std::out_of_range("wrap-around");
+			}
+
+			len += offset_;
+		} else {
+			if (offset_ < other.offset_) {
+				throw std::out_of_range("underflow");
+			}
+
+			len += offset_ - other.offset_;
+		}
+
+		return len;
+	}
+
 protected:
 	buff_t* crt_buf_;
 	size_t offset_;
@@ -322,6 +355,12 @@ public:
 	 */
 	void append(size_t n) {
 		crt_buf_->append(n);
+	}
+
+	void insert(std::unique_ptr<io_buff_t> buf) {
+		io_buff_t* end = buf->prev();
+		crt_buf_->append_chain(std::move(buf));
+		crt_buf_ = end;
 	}
 
 	/**

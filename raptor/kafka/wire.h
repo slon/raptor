@@ -14,15 +14,13 @@ namespace raptor { namespace kafka {
 
 template<class int_t>
 int_t check_range(int_t value,
-				  int_t min,
 				  int_t max,
 				  char const* name) {
-	if(value < min || value > max) {
+	if(value > max) {
 		throw std::out_of_range(
 			std::string("Error parsing ") +
 			name + ", " + std::to_string(value) +
-			" not in range [" + std::to_string(min) +
-			", " + std::to_string(max) + "]"
+			" > " + std::to_string(max)
 		);
 	} else {
 		return value;
@@ -38,7 +36,41 @@ void check(int_t expected, int_t actual, char const* name) {
 
 class wire_appender_t {
 public:
-	wire_appender_t(io_buff_t* buff) : appender_(buff) {}
+	wire_appender_t(io_buff_t* buff, size_t grow) : appender_(buff, grow) {}
+
+	void ensure(uint32_t n) { appender_.ensure(n); }
+
+	void int8(int8_t i) { appender_.write(i); }
+	void int16(int16_t i) { appender_.write_be(i); }
+	void int32(int32_t i) { appender_.write_be(i); }
+	void int64(int64_t i) { appender_.write_be(i); }
+
+	void start_array(int32_t array_size) { int32(array_size); }
+
+	void null_string() { int16(-1); }
+	void null_bytes() { int32(-1); }
+
+	void string(const std::string& str) {
+		int16(str.size());
+		appender_.push((uint8_t*)str.c_str(), str.size());
+	}
+
+	void bytes(const std::string& bytes) {
+		int32(bytes.size());
+		appender_.push((uint8_t*)bytes.c_str(), bytes.size());
+	}
+
+	void bytes(char const* data, size_t size) {
+		int32(size);
+		appender_.push((uint8_t const*)data, size);
+	}
+
+	void append(std::unique_ptr<io_buff_t> buf) {
+		appender_.insert(std::move(buf));
+	}
+
+private:
+	appender_t appender_;
 };
 
 class wire_writer_t {
@@ -99,7 +131,7 @@ class wire_cursor_t {
 public:
 	wire_cursor_t(const io_buff_t* buff) : cursor_(buff) {}
 
-	int8_t int8() { return cursor_.read_be<int8_t>(); }
+	int8_t int8() { return cursor_.read<int8_t>(); }
 	int16_t int16() { return cursor_.read_be<int16_t>(); }
 	int32_t int32() { return cursor_.read_be<int32_t>(); }
 	int64_t int64() { return cursor_.read_be<int64_t>(); }
@@ -139,6 +171,12 @@ public:
 	void skip(size_t size) {
 		cursor_.skip(size);
 	}
+
+	char* data() { return (char*)cursor_.data(); }
+
+	size_t peek() { return cursor_.peek().second; }
+
+	cursor_t cursor() { return cursor_; }
 
 private:
 	cursor_t cursor_;

@@ -11,10 +11,12 @@ void check_serialization(const std::string& expected_hex,
 	char buffer[16];
 	mock_writer_t writer(buffer, 16);
 
-	request.write(&writer);
-	writer.flush_all();
+	auto buf = request.serialize();
+	buf->coalesce();
 
-	ASSERT_EQ(remove_spaces(expected_hex), hexify(writer.data));
+	std::string request_str((char*)buf->data(), buf->length());
+
+	ASSERT_EQ(remove_spaces(expected_hex), hexify(request_str));
 }
 
 TEST(request_write, metadata) {

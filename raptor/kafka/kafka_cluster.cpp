@@ -1,6 +1,7 @@
 #include <raptor/kafka/kafka_cluster.h>
 
 #include <raptor/io/util.h>
+#include <raptor/io/inet_address.h>
 
 #include <glog/logging.h>
 
@@ -53,11 +54,9 @@ void rt_kafka_link_t::send_loop(broker_addr_t broker) {
 
 	while(send_channel_.get(&rpc)) {
 		try {
-			char obuf[options_.lib.obuf_size];
 			duration_t timeout = options_.lib.link_timeout;
-			rt_wire_writer_t writer(socket_.fd(), obuf, sizeof(obuf), &timeout);
-			rpc.request->write(&writer);
-			writer.flush_all();
+			auto buf = rpc.request->serialize();
+			write_all(socket_.fd(), buf.get(), &timeout);
 
 			if(!rpc.response) {
 				rpc.promise.set_value();

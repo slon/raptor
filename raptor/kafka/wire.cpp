@@ -252,4 +252,5 @@ size_t wire_reader_t::pos() const {
 	return pos_;
 }
 
+
 }} // namespace raptor::kafka

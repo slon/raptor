@@ -12,13 +12,13 @@ namespace raptor { namespace kafka {
 
 class request_t {
 public:
-	void write(wire_writer_t* writer) const;
+	std::unique_ptr<io_buff_t> serialize() const;
 
 	void set_correlation_id(int32_t cid);
 	void set_client_id(const std::string& client_id);
 
 protected:
-	void write_header(wire_writer_t* writer) const;
+	void write_header(wire_appender_t* appender) const;
 	int32_t header_size() const;
 
 	request_t(api_key_t api_key) :
@@ -27,8 +27,9 @@ protected:
 		correlation_id_(0),
 		client_id_(DEFAULT_CLIENT_ID) {}
 
-	virtual void write_body(wire_writer_t* writer) const = 0;
+	virtual void write_body(wire_appender_t* appender) const = 0;
 	virtual int32_t body_size() const = 0;
+	virtual int32_t ensure_size() const { return body_size(); }
 
 	int16_t api_key_, api_version_;
 	int32_t correlation_id_;
@@ -52,7 +53,7 @@ private:
 	std::vector<std::string> topics_;
 
 protected:
-	virtual void write_body(wire_writer_t* writer) const;
+	virtual void write_body(wire_appender_t* appender) const;
 	virtual int32_t body_size() const;
 };
 
@@ -84,7 +85,7 @@ public:
 		max_bytes(max_bytes) {}
 
 	virtual int32_t body_size() const;
-	virtual void write_body(wire_writer_t* writer) const;
+	virtual void write_body(wire_appender_t* appender) const;
 
 	const int32_t max_wait_time;
 	const int32_t min_bytes;
@@ -107,7 +108,7 @@ public:
 		message_set(message_set) {}
 
 	virtual int32_t body_size() const;
-	virtual void write_body(wire_writer_t* writer) const;
+	virtual void write_body(wire_appender_t* appender) const;
 
 	const int16_t required_acks;
 	const int32_t timeout;
@@ -126,7 +127,7 @@ public:
 		max_number_of_offsets(max_number_of_offsets) {}
 
 	virtual int32_t body_size() const;
-	virtual void write_body(wire_writer_t* writer) const;
+	virtual void write_body(wire_appender_t* appender) const;
 
 	const int64_t time;
 	const int32_t max_number_of_offsets;

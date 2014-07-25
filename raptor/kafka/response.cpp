@@ -31,7 +31,7 @@ void partition_metadata_t::read(wire_cursor_t* cursor) {
 	leader = cursor->int32();
 
 	replicas.resize(check_range(
-		cursor->array_size(), 0, MAX_REPLICAS,
+		cursor->array_size(), MAX_REPLICAS,
 		"partition.replicas"
 	));
 	for(int32_t& node_id : replicas) {
@@ -39,7 +39,7 @@ void partition_metadata_t::read(wire_cursor_t* cursor) {
 	}
 
 	in_sync_replicas.resize(check_range(
-		cursor->array_size(), 0, MAX_REPLICAS,
+		cursor->array_size(), MAX_REPLICAS,
 		"partition.in_sync_replicas"
 	));
 	for(int32_t& node_id : in_sync_replicas) {
@@ -52,7 +52,7 @@ void topic_metadata_t::read(wire_cursor_t* cursor) {
 	cursor->string(&name);
 
 	partitions.resize(check_range(
-		cursor->array_size(), 0, MAX_PARTITIONS,
+		cursor->array_size(), MAX_PARTITIONS,
 		"topic.partitions"
 	));
 	for(partition_metadata_t& partition : partitions) {
@@ -62,7 +62,7 @@ void topic_metadata_t::read(wire_cursor_t* cursor) {
 
 void metadata_response_t::read_body(wire_cursor_t* cursor) {
 	brokers_.resize(check_range(
-		cursor->array_size(), 0, MAX_BROKERS,
+		cursor->array_size(), MAX_BROKERS,
 		"metadata.brokers"
 	));
 	for(auto& broker : brokers_) {
@@ -70,7 +70,7 @@ void metadata_response_t::read_body(wire_cursor_t* cursor) {
 	}
 
 	topics_.resize(check_range(
-		cursor->array_size(), 0, MAX_TOPICS,
+		cursor->array_size(), MAX_TOPICS,
 		"metadata.topics"
 	));
 	for(auto& topic : topics_) {
@@ -117,7 +117,7 @@ void offset_response_t::read_body(wire_cursor_t* cursor) {
 	partition = cursor->int32(); // skip partition_id
 	err = static_cast<kafka_err_t>(cursor->int16());
 
-	size_t n_offsets = check_range(cursor->array_size(), 0, MAX_OFFSETS,
+	size_t n_offsets = check_range(cursor->array_size(), MAX_OFFSETS,
 								   "offset.offsets");
 
 	offsets.resize(n_offsets);

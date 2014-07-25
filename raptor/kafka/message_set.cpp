@@ -11,8 +11,98 @@
 
 namespace raptor { namespace kafka {
 
-static const int32_t MAX_MESSAGE_SET_SIZE = 16 * 1024 * 1024; // 16Mb
+static const int32_t MAX_MESSAGE_SET_SIZE = 64 * 1024 * 1024; // 64Mb
 static const int32_t MAX_MESSAGE_SIZE = 16 * 1024 * 1024; // 16Mb
+
+static const char XERIAL_SNAPPY_MAGIC[8] = { -126, 'S', 'N', 'A', 'P', 'P', 'Y', 0 };
+
+std::unique_ptr<io_buff_t> snappy_decompress(char const* data, size_t data_size) {
+	size_t uncompressed;
+	if(!snappy::GetUncompressedLength(data, data_size, &uncompressed)) {
+		throw std::runtime_error("snappy::GetUncompressedLength() failed");
+	}
+
+	auto buf = io_buff_t::create(uncompressed);
+	buf->append(uncompressed);
+
+	if(!snappy::RawUncompress(data, data_size, (char*)buf->data())) {
+		throw std::runtime_error("snappy::RawUncompress() failed");
+	}
+
+	return std::move(buf);
+}
+
+std::unique_ptr<io_buff_t> snappy_compress(char const* data, size_t data_size) {
+	auto buf = io_buff_t::create(snappy::MaxCompressedLength(data_size));
+
+	size_t compressed_length;
+	snappy::RawCompress(data, data_size, (char*)buf->data(), &compressed_length);
+
+	buf->append(compressed_length);
+	return std::move(buf);
+}
+
+std::unique_ptr<io_buff_t> xerial_snappy_decompress(io_buff_t const* buf) {
+	std::unique_ptr<io_buff_t> result;
+
+	char magic[8];
+	cursor_t cursor(buf);
+	cursor.pull(magic, sizeof(magic));
+
+	// plain old snappy compression
+	if(memcmp(magic, XERIAL_SNAPPY_MAGIC, sizeof(magic))) {
+		return snappy_decompress((char*)buf->data(), buf->length());
+	} else {
+		int32_t version = cursor.read_be<int32_t>();
+		int32_t compat = cursor.read_be<int32_t>();
+
+		if(version != 1 || compat != 1)
+			throw std::runtime_error("unsupported xerial blocking version");
+
+		while(cursor.peek().second != 0) {
+			int32_t block_size = cursor.read_be<int32_t>();
+			char* block_start = (char*)cursor.data();
+			cursor.skip(block_size);
+
+			auto block = snappy_decompress(block_start, block_size);
+
+			if(result) {
+				result->prepend_chain(std::move(block));
+			} else {
+				result = std::move(block);
+			}
+		}
+	}
+
+	if(result) {
+		return std::move(result);
+	} else {
+		return io_buff_t::create(0);
+	}
+}
+
+std::unique_ptr<io_buff_t> xerial_snappy_compress(io_buff_t const* buf) {
+	std::unique_ptr<io_buff_t> result = io_buff_t::create(16 + 8);
+	appender_t appender(result.get(), 8);
+
+	appender.push((uint8_t const*)XERIAL_SNAPPY_MAGIC, sizeof(XERIAL_SNAPPY_MAGIC));
+	appender.write_be<int32_t>(1); // version
+	appender.write_be<int32_t>(1); // compat
+
+	const size_t BLOCK_SIZE = 32 * 1024;
+
+	cursor_t cursor(buf);
+	while(cursor.length()) {
+		size_t compressed = std::min(cursor.length(), BLOCK_SIZE);
+		auto block = snappy_compress((char const*)cursor.data(), compressed);
+		cursor.skip(compressed);
+
+		appender.write_be<int32_t>(block->length());
+		appender.insert(std::move(block));
+	}
+
+	return std::move(result);
+}
 
 size_t message_size(message_t msg) {
 	size_t msg_size = 4 + // crc
@@ -68,101 +158,119 @@ size_t message_set_t::wire_size() const {
 	return 4 + data_->compute_chain_data_length();
 }
 
-void message_set_t::write(wire_writer_t* writer) const {
+void message_set_t::write(wire_appender_t* appender) const {
 	size_t length = data_->compute_chain_data_length();
-	writer->int32(length);
+	appender->int32(length);
 
-	io_buff_t* chunk = data_.get();
-	do {
-		writer->raw((char const*)chunk->data(), chunk->length());
-		chunk = chunk->next();
-	} while(chunk != data_.get());
+	appender->append(data_->clone());
 }
 
 void message_set_t::read(wire_cursor_t* cursor) {
-	int32_t size = check_range(cursor->int32(), 0, MAX_MESSAGE_SET_SIZE, "messageset.size");
+	int32_t size = check_range(cursor->int32(), MAX_MESSAGE_SET_SIZE, "messageset.size");
 
 	if(size > 0) {
-		data_ = cursor->raw(size);
-//		validate(true);
+		data_ = validate(cursor->raw(size));
 	}
 }
 
-// void message_set_t::validate(bool decompress) {
-// 	wire_reader_t reader(data_.get());
-// 	size_t msgset_end = 0;
+void append_block(std::unique_ptr<io_buff_t>& chain, wire_cursor_t start, wire_cursor_t end) {
+	cursor_t s = start.cursor(), e = end.cursor();
+	if(!(s == e)) {
+		std::unique_ptr<io_buff_t> block;
+		s.clone(block, e - s);
+		if(chain) {
+			chain->prepend_chain(std::move(block));
+		} else {
+			chain = std::move(block);
+		}
+	}
+}
 
-// 	while(true) {
-// 		size_t msg_start = reader.pos();
-// 		if(reader.remaining() < (size_t)12) {
-// 			msgset_end = msg_start;
-// 			break;
-// 		}
+void message_set_t::validate(bool decompress) {
+	data_ = validate(std::move(data_), decompress, true);
+	data_->coalesce();
+}
 
-// 		int64_t offset = reader.int64();
-// 		int32_t msg_size = check_range(reader.int32(), 0, MAX_MESSAGE_SIZE, "msg.size");
+std::unique_ptr<io_buff_t> message_set_t::validate(
+		std::unique_ptr<io_buff_t>&& raw,
+		bool decompress,
+		bool allow_compression) {
+	std::unique_ptr<io_buff_t> validated;
 
-// 		if(reader.remaining() < (size_t)msg_size) {
-// 			msgset_end = msg_start;
-// 			break;
-// 		}
+	wire_cursor_t block_start(raw.get()), block_end = block_start;
 
-// 		int32_t crc = reader.int32();
+	while(true) {
+		wire_cursor_t cursor = block_end;
 
-// 		boost::crc_32_type compute_crc;
-// 		compute_crc.process_bytes(reader.ptr(), msg_size - 4);
+		if(cursor.peek() < 12) {
+			break;
+		}
 
-// 		if(static_cast<uint32_t>(crc) != compute_crc()) {
-// 			throw exception_t(std::string("msg crc don't match:") +
-// 							  " actual=" + std::to_string(compute_crc()) +
-// 							  ", expected=" + std::to_string(static_cast<uint32_t>(crc)));
-// 		}
+		cursor.int64(); // ignore offset
+		int32_t msg_size = check_range(cursor.int32(), MAX_MESSAGE_SIZE, "msg.size");
 
-// 		if(0 != reader.int8()) {
-// 			throw exception_t("unsupported msg version");
-// 		}
+		if(cursor.peek() < (size_t)msg_size) {
+			break;
+		}
 
-// 		int8_t compression = reader.int8();
-// 		if(compression != 0 && compression != (int8_t)compression_codec_t::SNAPPY) {
-// 			throw exception_t("unsupported compression");
-// 		} else if(decompress && compression == (int8_t)compression_codec_t::SNAPPY) {
-// 			reader.skip_bytes(); // skip key
+		int32_t crc = cursor.int32();
 
-// 			int32_t value_size = reader.int32();
-// 			if(value_size == -1) throw exception_t("message set value is null");
-// 			char const* value = reader.ptr();
+		boost::crc_32_type compute_crc;
+		compute_crc.process_bytes(cursor.data(), msg_size - 4);
 
-// 			size_t uncompressed_length;
-// 			if(!snappy::GetUncompressedLength(value, value_size, &uncompressed_length)) {
-// 				throw exception_t("can't get snappy uncompressed length");
-// 			}
+		if(static_cast<uint32_t>(crc) != compute_crc()) {
+			throw exception_t(std::string("msg crc don't match:") +
+							  " actual=" + std::to_string(compute_crc()) +
+							  ", expected=" + std::to_string(static_cast<uint32_t>(crc)));
+		}
 
-// 			std::unique_ptr<io_buff_t> uncompressed = io_buff_t::create(uncompressed_length);
-// 			if(!snappy::RawUncompress(value, value_size, (char*)uncompressed->writable_data())) {
-// 				throw exception_t("snappy uncompress failed");
-// 			}
-// 			uncompressed->append(uncompressed_length);
+		if(0 != cursor.int8()) {
+			throw exception_t("unsupported msg version");
+		}
 
-// 			if(data_->length() != msgset_end) {
-// 				std::unique_ptr<io_buff_t> tail = data_->clone();
-// 				tail->trim_start(msgset_end);
-// 				uncompressed->append_chain(std::move(tail));
-// 			}
+		int8_t compression = cursor.int8();
+		if(compression != 0 && compression != (int8_t)compression_codec_t::SNAPPY) {
+			throw exception_t("unsupported compression");
+		} else if(compression != 0 && !allow_compression) {
+			throw exception_t("recursive compression not allowed");
+		} else if(decompress && compression == (int8_t)compression_codec_t::SNAPPY) {
+			append_block(validated, block_start, block_end);
 
-// 			data_->trim_end(data_->length() - msg_start);
-// 			data_->append_chain(std::move(uncompressed));
-// 		} else {
-// 			reader.skip_bytes(); // skip key
-// 			reader.skip_bytes(); // skip value
-// 		}
-// 	}
+			cursor.skip_bytes(); // skip key
 
-// 	// server may return incomplete part of message, we should just cut it off
-// 	data_->trim_end(data_->length() - msgset_end);
-// }
+			int32_t value_size = cursor.int32();
+			if(value_size == -1) throw exception_t("message set value is null");
+			auto value = cursor.raw(value_size);
 
-bool message_set_t::iter_t::is_end() const {
-	return current_ == last_ && reader_.is_end();
+			auto uncompressed = xerial_snappy_decompress(value.get());
+			uncompressed->coalesce();
+			uncompressed = validate(std::move(uncompressed), false, false);
+
+			if(validated) {
+				validated->prepend_chain(std::move(uncompressed));
+			} else {
+				validated = std::move(uncompressed);
+			}
+
+			block_start = block_end = cursor;
+		} else {
+			cursor.skip_bytes(); // skip key
+			cursor.skip_bytes(); // skip value
+			block_end = cursor;
+		}
+	}
+
+	append_block(validated, block_start, block_end);
+	if(validated) {
+		return std::move(validated);
+	} else {
+		raw->trim_end(raw->length());
+		return std::move(raw);
+	}
+}
+
+bool message_set_t::iter_t::is_end() {
+	return cursor_.peek() == 0;
 }
 
 message_t message_set_t::iter_t::next() {
@@ -170,30 +278,25 @@ message_t message_set_t::iter_t::next() {
 
 	message_t msg;
 
-	msg.offset = reader_.int64();
-	reader_.int32(); // skip size
-	reader_.int32(); // skip crc
-	reader_.int8(); // skip version
-	msg.flags = reader_.int8(); // flags
+	msg.offset = cursor_.int64();
+	cursor_.int32(); // skip size
+	cursor_.int32(); // skip crc
+	cursor_.int8(); // skip version
+	msg.flags = cursor_.int8(); // flags
 
-	int32_t key_size = reader_.int32();
+	int32_t key_size = cursor_.int32();
 	if(key_size >= 0) {
 		msg.key_size = key_size;
-		msg.key = reader_.ptr();
-		reader_.skip(key_size);
+		msg.key = cursor_.data();
+		cursor_.skip(key_size);
 	} else {
 		msg.key = NULL;
 		msg.key_size = 0;
 	}
 
-	msg.value_size = reader_.int32();
-	msg.value = reader_.ptr();
-	reader_.skip(msg.value_size);
-
-	if(reader_.is_end() && current_ != last_) {
-		current_ = current_->next();
-		reader_ = wire_reader_t(current_);
-	}
+	msg.value_size = cursor_.int32();
+	msg.value = cursor_.data();
+	cursor_.skip(msg.value_size);
 
 	return msg;
 }
@@ -265,21 +368,18 @@ void message_set_builder_t::reset() {
 }
 
 message_set_t message_set_builder_t::build() {
+	data_->append(writer_.pos() - data_->length());
+
 	if(compression_ == compression_codec_t::NONE) {
-		data_->append(writer_.pos() - data_->length());
 		return message_set_t(data_->clone());
 	} else if(compression_ == compression_codec_t::SNAPPY) {
-		LOG(INFO) << "compressing";
-
-		std::string compressed;
-		snappy::Compress((char*)data_->data(), writer_.pos(), &compressed);
+		auto compressed = xerial_snappy_compress(data_.get());
+		compressed->coalesce();
 
 		message_t msg;
-		msg.value = compressed.data();
-		msg.value_size = compressed.size();
+		msg.value = (char*)compressed->data();
+		msg.value_size = compressed->length();
 		msg.flags = (int8_t)compression_codec_t::SNAPPY;
-
-		LOG(INFO) << writer_.pos() << " " << compressed.size();
 
 		size_t full_size = full_message_size(msg);
 		message_set_builder_t builder(full_size);
