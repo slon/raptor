@@ -117,18 +117,25 @@ TEST_F(kafka_client_test_t, compression_not_aligned_fetch) {
 
 struct kafka_stress_test_t : public ::testing::Test {
 	std::vector<scheduler_ptr_t> schedulers;
-	int next_scheduler = 0;
+	int next_scheduler;
 	kafka_client_ptr_t client;
 
-	const std::string topic = "test-topic-2";
+	const std::string topic;
 	std::vector<offset_t> start_offset;
 
-	const int N_MESSAGES = 1024;
-	const int N_PARTITIONS = 1024;
-	const int N_PRODUCES = 128;
-	const duration_t sleep_time = duration_t(1);
+	const int N_MESSAGES;
+	const int N_PARTITIONS;
+	const int N_PRODUCES;
+	const duration_t sleep_time;
 
 	void SetUp() {
+        next_scheduler = 0;
+        topic = "test-topic-2";
+        N_MESSAGES = 1024;
+        N_PARTITIONS = 1024;
+        N_PRODUCES = 128;
+        sleep_time = duration_t(1);
+
 		options_t options;
 		options.lib.link_timeout = duration_t(10.0);
 
