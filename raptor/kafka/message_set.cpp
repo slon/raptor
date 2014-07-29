@@ -170,6 +170,8 @@ void message_set_t::read(wire_cursor_t* cursor) {
 
 	if(size > 0) {
 		data_ = validate(cursor->raw(size));
+	} else {
+		data_ = io_buff_t::create(0);
 	}
 }
 

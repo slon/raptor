@@ -23,5 +23,6 @@ sleep 2
 
 kafka-admin-topic --zookeeper localhost:2189 --create --topic empty-topic --partitions 1 --replication-factor 1
 kafka-admin-topic --zookeeper localhost:2189 --create --topic test-topic-1 --partitions 16 --replication-factor 2
+kafka-admin-topic --zookeeper localhost:2189 --create --topic test-topic-2 --partitions 1024 --replication-factor 2
 
 sleep 2
