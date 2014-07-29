@@ -120,13 +120,13 @@ struct kafka_stress_test_t : public ::testing::Test {
 	int next_scheduler;
 	kafka_client_ptr_t client;
 
-	const std::string topic;
+	std::string topic;
 	std::vector<offset_t> start_offset;
 
-	const int N_MESSAGES;
-	const int N_PARTITIONS;
-	const int N_PRODUCES;
-	const duration_t sleep_time;
+	int N_MESSAGES;
+	int N_PARTITIONS;
+	int N_PRODUCES;
+	duration_t sleep_time;
 
 	void SetUp() {
         next_scheduler = 0;
