@@ -97,6 +97,8 @@ public:
 		return make_ready_future();
 	}
 
+    virtual void shutdown() {}
+
 private:
 	mutex_t mutex_;
 

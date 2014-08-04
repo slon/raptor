@@ -6,6 +6,7 @@
 #include <utility>
 
 #include <raptor/core/time.h>
+#include <raptor/kafka/defs.h>
 
 namespace raptor { namespace kafka {
 
@@ -89,6 +90,7 @@ struct options_t {
 
 		size_t producer_buffer_size;
 		size_t producer_max_outstanding_requests;
+        compression_codec_t producer_compression;
     } lib;
 };
 

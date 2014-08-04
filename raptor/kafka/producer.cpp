@@ -50,7 +50,7 @@ void producer_t::flush(partition_id_t partition) {
 
 void producer_t::expand(partition_id_t max_partition) {
 	for(partition_id_t i = builders_.size(); i <= max_partition; ++i) {
-		builders_.emplace_back(options_.lib.producer_buffer_size);
+		builders_.emplace_back(options_.lib.producer_buffer_size, options_.lib.producer_compression);
 	}
 }
 

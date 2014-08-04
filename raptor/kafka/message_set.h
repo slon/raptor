@@ -30,12 +30,6 @@ protected:
 	virtual void flush();
 };
 
-enum class compression_codec_t : int8_t {
-	NONE = 0,
-	GZIP = 1,
-	SNAPPY = 2
-};
-
 struct message_t {
 	explicit message_t(const std::string& _value) :
 		offset(-1), flags(0), key(NULL), key_size(0),

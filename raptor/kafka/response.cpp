@@ -114,7 +114,7 @@ void offset_response_t::read_body(wire_cursor_t* cursor) {
 
 	check(1, cursor->array_size(), "offset.n_partitions");
 
-	partition = cursor->int32(); // skip partition_id
+	partition = cursor->int32();
 	err = static_cast<kafka_err_t>(cursor->int16());
 
 	size_t n_offsets = check_range(cursor->array_size(), MAX_OFFSETS,

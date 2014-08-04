@@ -48,4 +48,10 @@ enum class kafka_err_t {
 //! returns c-string description of kafka error
 char const* kafka_err_str(kafka_err_t err);
 
+enum class compression_codec_t : int8_t {
+	NONE = 0,
+	GZIP = 1,
+	SNAPPY = 2
+};
+
 }} // namespace raptor::kafka
