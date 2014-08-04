@@ -70,6 +70,7 @@ void rt_kafka_link_t::send_loop(broker_addr_t broker) {
 			auto err = std::current_exception();
 			close(err);
 			rpc.promise.set_exception(get_closing_error());
+			break;
 		}
 	}
 
@@ -93,6 +94,7 @@ void rt_kafka_link_t::recv_loop() {
 			auto err = std::current_exception();
 			close(err);
 			rpc.promise.set_exception(get_closing_error());
+			break;
 		}
 	}
 
