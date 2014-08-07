@@ -71,6 +71,8 @@ private:
 	pm::meter_t network_error_meter_, server_error_meter_;
 
 	void check_response(char const* name, topic_request_ptr_t request, topic_response_ptr_t response, future_t<void> request_completed);
+
+	future_t<void> send(topic_request_ptr_t request, topic_response_ptr_t response);
 };
 
 kafka_client_ptr_t make_kafka_client(

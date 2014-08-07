@@ -40,7 +40,7 @@ future_t<offset_t> rt_kafka_client_t::get_log_offset(
 	offset_request_ptr_t request = std::make_shared<offset_request_t>(topic, partition, time, 1);
 	offset_response_ptr_t response = std::make_shared<offset_response_t>();
 
-	return cluster_->send(request, response).then([request, response, this] (future_t<void> future) {
+	return send(request, response).then([request, response, this] (future_t<void> future) {
 		check_response("offset", request, response, future);
 
 		if(response->offsets.size() != 1)
@@ -68,7 +68,7 @@ future_t<message_set_t> rt_kafka_client_t::fetch(
 	);
 	fetch_response_ptr_t response = std::make_shared<fetch_response_t>();
 
-	return cluster_->send(request, response).then([request, response, this] (future_t<void> future) {
+	return send(request, response).then([request, response, this] (future_t<void> future) {
 		check_response("fetch", request, response, future);
 
 		return response->message_set;
@@ -84,9 +84,18 @@ future_t<void> rt_kafka_client_t::produce(
 	);
 	produce_response_ptr_t response = (options_.kafka.required_acks != 0) ? std::make_shared<produce_response_t>() : NULL;
 
-	return cluster_->send(request, response).then([request, response, this] (future_t<void> future) {
+	return send(request, response).then([request, response, this] (future_t<void> future) {
 		check_response("produce", request, response, future);
 	});
+}
+
+future_t<void> rt_kafka_client_t::send(topic_request_ptr_t request, topic_response_ptr_t response) {
+	auto start_time = rpc_timer_.start();
+	auto rpc_completed = cluster_->send(request, response);
+	rpc_completed.subscribe([this, start_time] (future_t<void>) {
+		rpc_timer_.finish(start_time);
+	});
+	return rpc_completed;
 }
 
 void rt_kafka_client_t::shutdown() {
