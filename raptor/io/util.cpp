@@ -20,6 +20,10 @@ void write_all(int fd, char const* data, size_t size, duration_t* timeout) {
 }
 
 void write_all(int fd, struct iovec* iov, int iovcnt, duration_t* timeout) {
+	while(iovcnt && iov[iovcnt - 1].iov_len == 0) {
+		--iovcnt;
+	}
+
 	while(iovcnt != 0) {
 		ssize_t res = rt_writev(fd, iov, iovcnt, timeout);
 

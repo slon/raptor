@@ -89,6 +89,14 @@ TEST_F(kafka_client_test_t, topic_not_exists) {
 		unknown_topic_or_partition_t);
 }
 
+TEST_F(kafka_client_test_t, empty_produce) {
+	make_client();
+
+	message_set_builder_t builder(1024);
+
+	client->produce("test-topic-1", 0, builder.build()).get();
+}
+
 TEST_F(kafka_client_test_t, produce_and_consume) {
 	make_client();
 
@@ -132,12 +140,12 @@ struct kafka_stress_test_t : public ::testing::Test {
         next_scheduler = 0;
         topic = "test-topic-2";
         N_MESSAGES = 1024;
-        N_PARTITIONS = 1024;
-        N_PRODUCES = 128;
-        sleep_time = duration_t(1);
+        N_PARTITIONS = 128;
+        N_PRODUCES = 16;
+        sleep_time = duration_t(2);
 
 		options_t options;
-		options.lib.link_timeout = duration_t(10.0);
+		options.lib.link_timeout = duration_t(15.0);
 
 		for(int i = 0; i < 4; ++i) {
 			schedulers.push_back(make_scheduler());
@@ -155,34 +163,42 @@ struct kafka_stress_test_t : public ::testing::Test {
 	}
 
 	void producer(partition_id_t partition) {
-		int msg_idx = 0;
-		for(int i = 0; i < N_PRODUCES; ++i) {
-			message_set_builder_t builder(4 * 1024 * 1024, compression_codec_t::SNAPPY);
-			for(int j = 0; j < N_MESSAGES; ++j) {
-				std::string msg = "msg" + std::to_string(++msg_idx);
-				builder.append(msg.data(), msg.size());
-			}
-			client->produce(topic, partition, builder.build()).get();
+		try {
+			int msg_idx = 0;
+			for(int i = 0; i < N_PRODUCES; ++i) {
+				message_set_builder_t builder(4 * 1024 * 1024, compression_codec_t::SNAPPY);
+				for(int j = 0; j < N_MESSAGES; ++j) {
+					std::string msg = "msg" + std::to_string(++msg_idx);
+					builder.append(msg.data(), msg.size());
+				}
+				client->produce(topic, partition, builder.build()).get();
 
-			duration_t s = sleep_time;
-			rt_sleep(&s);
+				duration_t s = sleep_time;
+				rt_sleep(&s);
+			}
+		} catch(std::exception& e) {
+			std::cerr << e.what() << std::endl;
 		}
 	}
 
 	void consumer(partition_id_t partition) {
-		int msg_idx = 0;
-		offset_t offset = start_offset[partition];
-		while(msg_idx != N_PRODUCES * N_MESSAGES) {
-			message_set_t msgset = client->fetch(topic, partition, offset).get();
-			auto iter = msgset.iter();
-			while(!iter.is_end()) {
-				message_t m = iter.next();
-				EXPECT_EQ("msg" + std::to_string(++msg_idx), std::string(m.value, m.value_size));
-				++offset;
-			}
+		try {
+			int msg_idx = 0;
+			offset_t offset = start_offset[partition];
+			while(msg_idx != N_PRODUCES * N_MESSAGES) {
+				message_set_t msgset = client->fetch(topic, partition, offset).get();
+				auto iter = msgset.iter();
+				while(!iter.is_end()) {
+					message_t m = iter.next();
+					EXPECT_EQ("msg" + std::to_string(++msg_idx), std::string(m.value, m.value_size));
+					++offset;
+				}
 
-			duration_t s = sleep_time;
-			rt_sleep(&s);
+				duration_t s = sleep_time;
+				rt_sleep(&s);
+			}
+		} catch(std::exception& e) {
+			std::cerr << e.what() << std::endl;
 		}
 	}
 
