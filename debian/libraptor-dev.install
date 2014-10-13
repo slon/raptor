@@ -2,3 +2,4 @@ libraptor.a usr/lib
 raptor/core/*.h usr/include/raptor/core
 raptor/io/*.h usr/include/raptor/io
 raptor/daemon/*.h usr/include/raptor/daemon
+raptor/server/*.h usr/include/raptor/server
