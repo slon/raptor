@@ -74,4 +74,32 @@ private:
 	wait_queue_t queue_;
 };
 
+class count_down_t {
+public:
+	count_down_t() : count_(0), queue_(&lock_) {}
+
+	void inc() {
+		std::lock_guard<spinlock_t> guard(lock_);
+		++count_;
+	}
+
+	void dec() {
+		std::lock_guard<spinlock_t> guard(lock_);
+		--count_;
+
+		if(count_ == 0) queue_.notify_all();
+	}
+
+	void wait_zero() {
+		std::lock_guard<spinlock_t> guard(lock_);
+
+		while(count_ != 0) queue_.wait(nullptr);
+	}
+
+private:
+	spinlock_t lock_;
+	int count_;
+	wait_queue_t queue_;
+};
+
 } // namespace raptor

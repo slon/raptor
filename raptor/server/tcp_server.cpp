@@ -10,7 +10,7 @@
 
 namespace raptor {
 
-tcp_server_t::tcp_server_t(scheduler_t* scheduler,
+tcp_server_t::tcp_server_t(scheduler_ptr_t scheduler,
 			std::shared_ptr<tcp_handler_t> handler,
 			uint16_t port,
 			config_t config) :
@@ -39,18 +39,26 @@ void tcp_server_t::accept_loop() {
 			}
 		}
 
+		rt_ctl_nonblock(sock.fd());
+		active_handlers_.inc();
 		scheduler_->start(&tcp_server_t::handle_accept, this, sock.release());
 	}
 }
 
 void tcp_server_t::handle_accept(int fd) {
-	fd_guard_t sock(fd);
-	handler_->on_accept(sock.fd());
+	try {
+		fd_guard_t sock(fd);
+		handler_->on_accept(sock.fd());
+	} catch(const std::exception& e) {
+		PLOG(ERROR) << e.what();
+	}
+	active_handlers_.dec();
 }
 
 void tcp_server_t::shutdown() {
 	shutdown_ = true;
 	accept_fiber_.join();
+	active_handlers_.wait_zero();
 }
 
 } // namespace raptor

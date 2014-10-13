@@ -1,6 +1,7 @@
 #pragma once
 
 #include <raptor/core/periodic.h>
+#include <raptor/server/tcp_server.h>
 
 namespace raptor {
 
@@ -19,6 +20,10 @@ public:
 
 private:
 	periodic_t periodic_;
+};
+
+struct graphite_handler_t : public tcp_handler_t {
+	virtual void on_accept(int fd);
 };
 
 } // namespace raptor
